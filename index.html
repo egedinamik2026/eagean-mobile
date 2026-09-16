@@ -206,6 +206,28 @@
     let clockInterval = null;
     let bildirimlerAcik = false;
 
+    // GERÇEK ZAMANLI (REALTIME) DİNLEYİCİ - İş bittiğinde veya yeni iş geldiğinde anında ekrana düşer
+    supabaseClient
+      .channel('public:cnc_is_emirleri')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cnc_is_emirleri' }, payload => {
+          console.log('Veritabanında değişiklik algılandı:', payload);
+          
+          // Eğer bildirimler menüden açıldıysa ekrana uyarı ver
+          if (bildirimlerAcik) {
+              alert("🔔 Bildirim: Atölyede iş emri durumu güncellendi veya bitti!");
+          }
+
+          // Ekran verilerini anında otomatik tazele
+          sahaVerileriniYukle();
+          if (typeof loadYoneticiGenelTakip === 'function') {
+              loadYoneticiGenelTakip();
+              loadYoneticiMakina();
+              loadYoneticiPlan();
+              loadYoneticiMakinaYuku();
+          }
+      })
+      .subscribe();
+
     function getIsEmriNumarasi(item, d) {
         if (item.malzeme_kodu && item.malzeme_kodu.trim() !== "" && item.malzeme_kodu !== "null") return item.malzeme_kodu;
         if (item.is_emri_no && item.is_emri_no.trim() !== "") return item.is_emri_no;
@@ -238,7 +260,7 @@
         bildirimlerAcik = !bildirimlerAcik;
         document.getElementById("bildirimMenuText").innerText = bildirimlerAcik ? "🔕 Bildirim Kapat" : "🔔 Bildirim Aç";
         toggleMenu('panelDropdown');
-        alert(bildirimlerAcik ? "Bildirimler açıldı." : "Bildirimler kapatıldı.");
+        alert(bildirimlerAcik ? "Bildirimler açıldı. İş bittiğinde veya güncellendiğinde sesli/uyarı alacaksınız." : "Bildirimler kapatıldı.");
     }
 
     async function handleLogin() {
@@ -512,6 +534,8 @@
     async function sahaVerileriniYukle() {
         const makinaDiv = document.getElementById("aktifMakinaListesi");
         const takipDiv = document.getElementById("genelTakipListesi");
+        if(!makinaDiv || !takipDiv) return;
+
         makinaDiv.innerHTML = "Yükleniyor...";
         takipDiv.innerHTML = "Yükleniyor...";
 
@@ -781,6 +805,7 @@
 
     async function loadYoneticiGenelTakip() {
         const listDiv = document.getElementById("yoneticiGenelTakipListesi");
+        if(!listDiv) return;
         listDiv.innerHTML = "Yükleniyor...";
         try {
             const { data } = await supabaseClient.from("cnc_is_emirleri").select("*");
@@ -845,6 +870,7 @@
 
     async function loadYoneticiMakina() {
         const listDiv = document.getElementById("yoneticiMakinaListesi");
+        if(!listDiv) return;
         listDiv.innerHTML = "Yükleniyor...";
         try {
             const { data } = await supabaseClient.from("cnc_is_emirleri").select("*");
@@ -884,6 +910,7 @@
 
     async function loadYoneticiPlan() {
         const listDiv = document.getElementById("yoneticiPlanListesi");
+        if(!listDiv) return;
         listDiv.innerHTML = "Yükleniyor...";
         try {
             const { data } = await supabaseClient.from("cnc_is_emirleri").select("*");
@@ -894,9 +921,7 @@
                     let d = {};
                     try { d = JSON.parse(item.durum || "{}"); } catch(e){}
                     
-                    if (d.isCompleted) {
-                        return;
-                    }
+                    if (d.isCompleted) return;
 
                     varMi = true;
                     let isemriKodu = getIsEmriNumarasi(item, d);
@@ -949,6 +974,7 @@
 
     async function loadYoneticiMakinaYuku() {
         const listDiv = document.getElementById("yoneticiMakinaYukuListesi");
+        if(!listDiv) return;
         listDiv.innerHTML = "Yükleniyor...";
         try {
             const { data } = await supabaseClient.from("cnc_is_emirleri").select("*");
