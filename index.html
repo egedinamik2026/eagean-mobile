@@ -2,14 +2,29 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- TELEFON UYGULAMASI GİBİ OLMASI İÇİN YAKINLAŞTIRMA VE KAYDIRMA ENGELLENDİ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EAGEAN DYNAMICS - CNC Atölye Mobil Terminali</title>
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="icon" type="image/png" href="logo.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; margin: 0; padding: 0; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding-top: 10px; padding-bottom: 70px; }
+        
+        /* SAĞA SOLA KAYMAYI ÖNLEMEK İÇİN OVERFLOW-X HIDDEN EKLENDİ */
+        body { 
+            background-color: #f4f6f9; 
+            margin: 0; 
+            padding: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; 
+            min-height: 100vh; 
+            padding-top: 10px; 
+            padding-bottom: 70px; 
+            overflow-x: hidden; 
+            touch-action: pan-x pan-y;
+        }
         
         .container { width: 100%; max-width: 420px; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; margin: 0 auto; text-align: left; }
         
@@ -56,7 +71,17 @@
         h2 { text-align: left; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
         .form-group { margin-bottom: 12px; text-align: left; }
         label { display: block; margin-bottom: 4px; font-weight: bold; color: #555; font-size: 13px; text-align: left; }
-        input[type="text"], input[type="password"], input[type="datetime-local"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; text-align: left; }
+        
+        /* MOBİLDE INPUTLARIN SAYFAYI TAŞIRMASINI ÖNLEMEK İÇİN MAX-WIDTH 100% */
+        input[type="text"], input[type="password"], input[type="datetime-local"], select, textarea { 
+            width: 100%; 
+            max-width: 100%;
+            padding: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            font-size: 14px; 
+            text-align: left; 
+        }
         
         .remember-group { display: flex; align-items: center; margin-bottom: 15px; font-size: 14px; color: #555; cursor: pointer; text-align: left; }
         .remember-group input { width: 18px; height: 18px; margin-right: 8px; cursor: pointer; }
@@ -72,7 +97,7 @@
         .bottom-nav button.active { color: #ffffff; border-bottom: 2px solid #3498db; }
 
         .content-area { padding-bottom: 50px; text-align: left; }
-        .card { background: #ecf0f1; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; text-align: left; }
+        .card { background: #ecf0f1; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; text-align: left; word-break: break-word; }
         .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 11px; }
         .bg-green { background-color: #27ae60; }
         .bg-red { background-color: #c0392b; }
@@ -271,12 +296,11 @@
     }
 
     window.onload = function() {
-        // Uygulama açılışında 1.5 saniye (1500 milisaniye) logoyu gösterip ana ekrana geçiş yapıyoruz
         setTimeout(() => {
             const splash = document.getElementById("splashScreen");
             if (splash) {
                 splash.style.opacity = "0";
-                setTimeout(() => splash.remove(), 500); // Ekrandan tamamen kaldır
+                setTimeout(() => splash.remove(), 500);
             }
         }, 1500);
 
@@ -1004,7 +1028,7 @@
         detayStr += `\n--- DİK İŞLEM BÖLÜMÜ ---\n`;
         detayStr += `Tezgah: ${d.dik_tezgah || 'Yok'} | Operatör: ${d.dik_operator || '-'}\n`;
         if(d.dik_operasyonlar && d.dik_operasyonlar.length > 0) {
-            d.dik_operationlar.forEach(op => {
+            d.dik_operasyonlar.forEach(op => {
                 detayStr += `• ${op.opNo}. Op -> Durum: ${op.durum} (Başl: ${op.baslangic || '-'} | Bitis: ${op.bitis || '-'})\n`;
             });
         } else {
@@ -1017,7 +1041,7 @@
     async function loadYoneticiMakinaYuku() {
         const listDiv = document.getElementById("yoneticiMakinaYukuListesi");
         if(!listDiv) return;
-        listDiv.innerHTML = "Yükleniyor çubuğu...";
+        listDiv.innerHTML = "Yükleniyor...";
         try {
             const { data } = await supabaseClient.from("cnc_is_emirleri").select("*");
             if(data) {
