@@ -2,22 +2,19 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EAGEAN DYNAMICS - CNC Atölye Mobil Terminali</title>
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="icon" type="image/png" href="logo.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: #f4f6f9; margin: 0; padding: 0; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; margin: 0; padding: 0; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding-top: 10px; padding-bottom: 70px; }
         
-        /* Yenileniyor Göstergesi */
-        #refreshIndicator { position: fixed; top: -50px; left: 50%; transform: translateX(-50%); background: #2c3e50; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1000; transition: top 0.3s ease; }
-
-        .container { width: 100%; max-width: 480px; min-height: 100vh; background: #ffffff; padding: 15px; padding-bottom: 80px; position: relative; margin: 0 auto; text-align: center; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 15px rgba(0,0,0,0.05); }
+        .container { width: 100%; max-width: 420px; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; margin: 0 auto; text-align: left; }
         
-        .brand-header { text-align: center; margin-bottom: 15px; width: 100%; }
-        .brand-header img { width: 50px; height: 50px; object-fit: contain; margin-bottom: 5px; }
+        .brand-header { text-align: center; margin-bottom: 20px; }
+        .brand-header img { width: 55px; height: 55px; object-fit: contain; margin-bottom: 5px; }
         .brand-header h1 { font-size: 18px; color: #2c3e50; margin: 0; font-weight: bold; letter-spacing: 1px; }
 
         .menu-icon { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #333; }
@@ -25,42 +22,40 @@
         .dropdown-menu div { padding: 10px 15px; font-size: 14px; cursor: pointer; border-bottom: 1px solid #eee; }
         .dropdown-menu div:hover { background-color: #f1f1f1; }
 
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 19px; width: 100%; }
-        .form-group { margin-bottom: 12px; text-align: left; width: 100%; }
+        h2 { text-align: left; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
+        .form-group { margin-bottom: 12px; text-align: left; }
         label { display: block; margin-bottom: 4px; font-weight: bold; color: #555; font-size: 13px; text-align: left; }
         input[type="text"], input[type="password"], input[type="datetime-local"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; text-align: left; }
         
-        .remember-group { display: flex; align-items: center; margin-bottom: 15px; font-size: 14px; color: #555; cursor: pointer; text-align: left; width: 100%; }
+        .remember-group { display: flex; align-items: center; margin-bottom: 15px; font-size: 14px; color: #555; cursor: pointer; text-align: left; }
         .remember-group input { width: 18px; height: 18px; margin-right: 8px; cursor: pointer; }
 
         button { width: 100%; padding: 11px; background-color: #2980b9; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px; text-align: center; }
         button:hover { background-color: #2471a3; }
         
         .hidden { display: none; }
-        .screen { width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .screen { width: 100%; text-align: left; }
         
-        /* Tam Ortalanmış Alt Navigasyon Çubuğu */
-        .bottom-nav { display: flex; justify-content: space-around; align-items: center; background: #2c3e50; padding: 10px 0; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+        /* Düzeltilmiş ve Ortalanmış Alt Navigasyon Çubuğu (Taşma Yapmaz) */
+        .bottom-nav { display: flex; justify-content: space-around; background: #2c3e50; padding: 10px 0; border-radius: 0 0 12px 12px; position: fixed; bottom: 0; left: 0; right: 0; width: 100%; max-width: 420px; margin: 0 auto; z-index: 100; }
         .bottom-nav button { background: none; color: #bdc3c7; border: none; font-size: 11px; font-weight: bold; cursor: pointer; margin: 0; padding: 5px; text-align: center; width: auto; }
         .bottom-nav button.active { color: #ffffff; border-bottom: 2px solid #3498db; }
 
-        .content-area { padding-bottom: 20px; text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .op-tab, .yonetici-tab { width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .card { background: #ecf0f1; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; text-align: left; width: 100%; }
+        .content-area { padding-bottom: 50px; text-align: left; }
+        .card { background: #ecf0f1; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; text-align: left; }
         .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 11px; }
         .bg-green { background-color: #27ae60; }
         .bg-red { background-color: #c0392b; }
         .bg-blue { background-color: #2980b9; }
         .bg-orange { background-color: #d35400; }
         
-        .btn-row { display: flex; gap: 8px; margin-top: 8px; width: 100%; }
+        .btn-row { display: flex; gap: 8px; margin-top: 8px; }
     </style>
 </head>
 <body>
 
-<div id="refreshIndicator">🔄 Yenileniyor...</div>
-
 <div class="container">
+    <!-- LOGO VE MARKA ALANI -->
     <div class="brand-header">
         <img src="logo.png" alt="Logo">
         <h1>EAGEAN DYNAMICS</h1>
@@ -137,16 +132,16 @@
             <!-- SEKME 2: MAKİNA -->
             <div id="tabMakina" class="op-tab hidden">
                 <h2>⚙️ Aktif Makina İşlemleri</h2>
-                <div id="aktifMakinaListesi" style="width: 100%;">
-                    <p style="text-align:center; color:#7f8c8d;">Aktif iş bulunmuyor.</p>
+                <div id="aktifMakinaListesi">
+                    <p style="text-align:left; color:#7f8c8d;">Aktif iş bulunmuyor.</p>
                 </div>
             </div>
 
             <!-- SEKME 3: GENEL TAKİP -->
             <div id="tabGenelTakip" class="op-tab hidden">
                 <h2>📋 Genel Takip & Geçmiş</h2>
-                <div id="genelTakipListesi" style="width: 100%;">
-                    <p style="text-align:center; color:#7f8c8d;">Tamamlanan kayıt bulunmuyor.</p>
+                <div id="genelTakipListesi">
+                    <p style="text-align:left; color:#7f8c8d;">Tamamlanan kayıt bulunmuyor.</p>
                 </div>
             </div>
 
@@ -165,29 +160,29 @@
             
             <div id="yoneticiTabGenelTakip" class="yonetici-tab">
                 <h2>📋 Genel Takip</h2>
-                <div id="yoneticiGenelTakipListesi" style="width: 100%;">
-                    <p style="text-align:center; color:#7f8c8d;">Yükleniyor...</p>
+                <div id="yoneticiGenelTakipListesi">
+                    <p style="text-align:left; color:#7f8c8d;">Yükleniyor...</p>
                 </div>
             </div>
 
             <div id="yoneticiTabMakina" class="yonetici-tab hidden">
                 <h2>⚙️ Makina Durumları</h2>
-                <div id="yoneticiMakinaListesi" style="width: 100%;">
-                    <p style="text-align:center; color:#7f8c8d;">Yükleniyor...</p>
+                <div id="yoneticiMakinaListesi">
+                    <p style="text-align:left; color:#7f8c8d;">Yükleniyor...</p>
                 </div>
             </div>
 
             <div id="yoneticiTabPlan" class="yonetici-tab hidden">
                 <h2>📅 Üretim Planı</h2>
-                <div id="yoneticiPlanListesi" style="width: 100%;">
-                    <p style="text-align:center; color:#7f8c8d;">Yükleniyor...</p>
+                <div id="yoneticiPlanListesi">
+                    <p style="text-align:left; color:#7f8c8d;">Yükleniyor...</p>
                 </div>
             </div>
 
             <div id="yoneticiTabMakinaYuku" class="yonetici-tab hidden">
-                <h2>📊 Makina Yuku Özet</h2>
-                <div id="yoneticiMakinaYukuListesi" style="width: 100%;">
-                    <p style="text-align:center; color:#7f8c8d;">Yükleniyor...</p>
+                <h2>📊 Makina Yükü Özet</h2>
+                <div id="yoneticiMakinaYukuListesi">
+                    <p style="text-align:left; color:#7f8c8d;">Yükleniyor...</p>
                 </div>
             </div>
 
@@ -211,28 +206,6 @@
     let currentUser = "";
     let clockInterval = null;
     let bildirimlerAcik = false;
-
-    // Aşağı Çekerek Yenileme (Pull-to-Refresh) Mantığı
-    let touchStartY = 0;
-    window.addEventListener('touchstart', e => {
-        touchStartY = e.touches[0].clientY;
-    });
-
-    window.addEventListener('touchend', e => {
-        let touchEndY = e.changedTouches[0].clientY;
-        if (window.scrollY === 0 && (touchEndY - touchStartY) > 90) {
-            triggerRefresh();
-        }
-    });
-
-    function triggerRefresh() {
-        const indicator = document.getElementById("refreshIndicator");
-        indicator.style.top = "15px";
-        
-        setTimeout(() => {
-            location.reload();
-        }, 800);
-    }
 
     function getIsEmriNumarasi(item, d) {
         if (item.malzeme_kodu && item.malzeme_kodu.trim() !== "" && item.malzeme_kodu !== "null") return item.malzeme_kodu;
@@ -636,10 +609,10 @@
                 if(tamamlananlar.length > 0) {
                     takipDiv.innerHTML = tamamlananlar.map(x => x.html).join("");
                 } else {
-                    takipDiv.innerHTML = "<p style='text-align:center; color:#7f8c8d;'>Tamamlanan kayıt bulunmuyor.</p>";
+                    takipDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Tamamlanan kayıt bulunmuyor.</p>";
                 }
 
-                if(!aktifVar) makinaDiv.innerHTML = "<p style='text-align:center; color:#7f8c8d;'>Aktif işiniz bulunmuyor.</p>";
+                if(!aktifVar) makinaDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Aktif işiniz bulunmuyor.</p>";
             }
         } catch(e) {
             makinaDiv.innerHTML = "Veriler yüklenemedi.";
@@ -827,7 +800,7 @@
                             listeVerileri.push({
                                 tarih: tarih,
                                 html: `
-                                <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px; width: 100%;">
+                                <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px;">
                                     <div onclick="silYoneticiKayit('${item.id}')" style="position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: #c0392b; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; z-index: 1;">Sil</div>
                                     <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "torna")'>
                                         <p style="font-size: 17px; font-weight: bold; margin-bottom: 6px; color: #2c3e50;">${isemriNo}</p>
@@ -845,7 +818,7 @@
                             listeVerileri.push({
                                 tarih: tarih,
                                 html: `
-                                <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px; width: 100%;">
+                                <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px;">
                                     <div onclick="silYoneticiKayit('${item.id}')" style="position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: #c0392b; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; z-index: 1;">Sil</div>
                                     <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "dik")'>
                                         <p style="font-size: 17px; font-weight: bold; margin-bottom: 6px; color: #2c3e50;">${isemriNo}</p>
@@ -865,7 +838,7 @@
                 if(listeVerileri.length > 0) {
                     listDiv.innerHTML = listeVerileri.map(x => x.html).join("");
                 } else {
-                    listDiv.innerHTML = "<p style='text-align:center; color:#7f8c8d;'>Aktif takip kaydı bulunmuyor.</p>";
+                    listDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Aktif takip kaydı bulunmuyor.</p>";
                 }
             }
         } catch(e) { listDiv.innerHTML = "Veriler yüklenemedi."; }
@@ -905,7 +878,7 @@
                         }
                     }
                 });
-                if(!varMi) listDiv.innerHTML = "<p style='text-align:center; color:#7f8c8d;'>Çalışan aktif makina bulunmuyor.</p>";
+                if(!varMi) listDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Çalışan aktif makina bulunmuyor.</p>";
             }
         } catch(e) { listDiv.innerHTML = "Veriler yüklenemedi."; }
     }
@@ -936,7 +909,7 @@
                         <p style="font-size:11px; color:#666; margin-top:5px; text-align:left;">Detaylar için dokun 🔍</p>
                     </div>`;
                 });
-                if(!varMi) listDiv.innerHTML = "<p style='text-align:center; color:#7f8c8d;'>Aktif plan kaydı bulunmuyor.</p>";
+                if(!varMi) listDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Aktif plan kaydı bulunmuyor.</p>";
             }
         } catch(e) { listDiv.innerHTML = "Veriler yüklenemedi."; }
     }
