@@ -17,6 +17,37 @@
         .brand-header img { width: 55px; height: 55px; object-fit: contain; margin-bottom: 5px; }
         .brand-header h1 { font-size: 18px; color: #2c3e50; margin: 0; font-weight: bold; letter-spacing: 1px; }
 
+        /* AÇILIŞ SPLASH EKRANI STİLİ */
+        #splashScreen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        #splashScreen img {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            margin-bottom: 15px;
+            animation: pulse 1.2s infinite alternate;
+        }
+        #splashScreen h1 {
+            color: #ffffff;
+            font-size: 22px;
+            letter-spacing: 2px;
+            margin: 0;
+            font-weight: bold;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.08); opacity: 1; }
+        }
+
         .menu-icon { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #333; }
         .dropdown-menu { display: none; position: absolute; top: 45px; right: 20px; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; width: 180px; text-align: left; }
         .dropdown-menu div { padding: 10px 15px; font-size: 14px; cursor: pointer; border-bottom: 1px solid #eee; }
@@ -52,6 +83,12 @@
     </style>
 </head>
 <body>
+
+    <!-- AÇILIŞTA ÇIKACAK LOGO EKRANI (SPLASH SCREEN) -->
+    <div id="splashScreen">
+        <img src="logo.png" alt="Logo">
+        <h1>EAGEAN DYNAMICS</h1>
+    </div>
 
 <div class="container">
     <!-- LOGO VE MARKA ALANI -->
@@ -206,18 +243,14 @@
     let clockInterval = null;
     let bildirimlerAcik = false;
 
-    // GERÇEK ZAMANLI (REALTIME) DİNLEYİCİ - İş bittiğinde veya yeni iş geldiğinde anında ekrana düşer
+    // GERÇEK ZAMANLI (REALTIME) DİNLEYİCİ
     supabaseClient
       .channel('public:cnc_is_emirleri')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cnc_is_emirleri' }, payload => {
           console.log('Veritabanında değişiklik algılandı:', payload);
-          
-          // Eğer bildirimler menüden açıldıysa ekrana uyarı ver
           if (bildirimlerAcik) {
               alert("🔔 Bildirim: Atölyede iş emri durumu güncellendi veya bitti!");
           }
-
-          // Ekran verilerini anında otomatik tazele
           sahaVerileriniYukle();
           if (typeof loadYoneticiGenelTakip === 'function') {
               loadYoneticiGenelTakip();
@@ -238,6 +271,15 @@
     }
 
     window.onload = function() {
+        // Uygulama açılışında 1.5 saniye (1500 milisaniye) logoyu gösterip ana ekrana geçiş yapıyoruz
+        setTimeout(() => {
+            const splash = document.getElementById("splashScreen");
+            if (splash) {
+                splash.style.opacity = "0";
+                setTimeout(() => splash.remove(), 500); // Ekrandan tamamen kaldır
+            }
+        }, 1500);
+
         const savedUser = localStorage.getItem("cnc_logged_user");
         const savedRole = localStorage.getItem("cnc_logged_role");
         if (savedUser && savedRole) {
@@ -260,7 +302,7 @@
         bildirimlerAcik = !bildirimlerAcik;
         document.getElementById("bildirimMenuText").innerText = bildirimlerAcik ? "🔕 Bildirim Kapat" : "🔔 Bildirim Aç";
         toggleMenu('panelDropdown');
-        alert(bildirimlerAcik ? "Bildirimler açıldı. İş bittiğinde veya güncellendiğinde sesli/uyarı alacaksınız." : "Bildirimler kapatıldı.");
+        alert(bildirimlerAcik ? "Bildirimler açıldı." : "Bildirimler kapatıldı.");
     }
 
     async function handleLogin() {
@@ -962,7 +1004,7 @@
         detayStr += `\n--- DİK İŞLEM BÖLÜMÜ ---\n`;
         detayStr += `Tezgah: ${d.dik_tezgah || 'Yok'} | Operatör: ${d.dik_operator || '-'}\n`;
         if(d.dik_operasyonlar && d.dik_operasyonlar.length > 0) {
-            d.dik_operasyonlar.forEach(op => {
+            d.dik_operationlar.forEach(op => {
                 detayStr += `• ${op.opNo}. Op -> Durum: ${op.durum} (Başl: ${op.baslangic || '-'} | Bitis: ${op.bitis || '-'})\n`;
             });
         } else {
@@ -975,7 +1017,7 @@
     async function loadYoneticiMakinaYuku() {
         const listDiv = document.getElementById("yoneticiMakinaYukuListesi");
         if(!listDiv) return;
-        listDiv.innerHTML = "Yükleniyor...";
+        listDiv.innerHTML = "Yükleniyor çubuğu...";
         try {
             const { data } = await supabaseClient.from("cnc_is_emirleri").select("*");
             if(data) {
