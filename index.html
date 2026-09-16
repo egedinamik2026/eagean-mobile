@@ -9,8 +9,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; margin: 0; padding: 0; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding-top: 20px; }
-        .container { width: 100%; max-width: 450px; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; margin: 10px; text-align: center; }
+        body { background-color: #f4f6f9; margin: 0; padding: 0; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding-top: 10px; padding-bottom: 70px; }
+        
+        .container { width: 100%; max-width: 420px; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; margin: 0 auto; text-align: left; }
         
         .brand-header { text-align: center; margin-bottom: 20px; }
         .brand-header img { width: 55px; height: 55px; object-fit: contain; margin-bottom: 5px; }
@@ -21,8 +22,8 @@
         .dropdown-menu div { padding: 10px 15px; font-size: 14px; cursor: pointer; border-bottom: 1px solid #eee; }
         .dropdown-menu div:hover { background-color: #f1f1f1; }
 
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
-        .form-group { margin-bottom: 12px; text-align: left; width: 100%; }
+        h2 { text-align: left; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
+        .form-group { margin-bottom: 12px; text-align: left; }
         label { display: block; margin-bottom: 4px; font-weight: bold; color: #555; font-size: 13px; text-align: left; }
         input[type="text"], input[type="password"], input[type="datetime-local"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; text-align: left; }
         
@@ -33,15 +34,14 @@
         button:hover { background-color: #2471a3; }
         
         .hidden { display: none; }
-        .screen { width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .screen { width: 100%; text-align: left; }
         
-        .bottom-nav { display: flex; justify-content: space-around; background: #2c3e50; padding: 10px 0; border-radius: 0 0 12px 12px; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 450px; z-index: 100; }
+        .bottom-nav { display: flex; justify-content: space-around; background: #2c3e50; padding: 10px 0; border-radius: 0 0 12px 12px; position: fixed; bottom: 0; left: 0; right: 0; width: 100%; max-width: 420px; margin: 0 auto; z-index: 100; }
         .bottom-nav button { background: none; color: #bdc3c7; border: none; font-size: 11px; font-weight: bold; cursor: pointer; margin: 0; padding: 5px; text-align: center; width: auto; }
         .bottom-nav button.active { color: #ffffff; border-bottom: 2px solid #3498db; }
 
-        .content-area { padding-bottom: 60px; text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .op-tab, .yonetici-tab { width: 100%; }
-        .card { background: #ecf0f1; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; text-align: left; width: 100%; }
+        .content-area { padding-bottom: 50px; text-align: left; }
+        .card { background: #ecf0f1; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; text-align: left; }
         .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 11px; }
         .bg-green { background-color: #27ae60; }
         .bg-red { background-color: #c0392b; }
@@ -54,6 +54,7 @@
 <body>
 
 <div class="container">
+    <!-- LOGO VE MARKA ALANI -->
     <div class="brand-header">
         <img src="logo.png" alt="Logo">
         <h1>EAGEAN DYNAMICS</h1>
@@ -130,16 +131,16 @@
             <!-- SEKME 2: MAKİNA -->
             <div id="tabMakina" class="op-tab hidden">
                 <h2>⚙️ Aktif Makina İşlemleri</h2>
-                <div id="aktifMakinaListesi" style="width: 100%;">
-                    <p style="text-align:center; color:#7f8c8d;">Aktif iş bulunmuyor.</p>
+                <div id="aktifMakinaListesi">
+                    <p style="text-align:left; color:#7f8c8d;">Aktif iş bulunmuyor.</p>
                 </div>
             </div>
 
             <!-- SEKME 3: GENEL TAKİP -->
             <div id="tabGenelTakip" class="op-tab hidden">
                 <h2>📋 Genel Takip & Geçmiş</h2>
-                <div id="genelTakipListesi" style="width: 100%;">
-                    <p style="text-align:center; color:#7f8c8d;">Tamamlanan kayıt bulunmuyor.</p>
+                <div id="genelTakipListesi">
+                    <p style="text-align:left; color:#7f8c8d;">Tamamlanan kayıt bulunmuyor.</p>
                 </div>
             </div>
 
@@ -158,29 +159,29 @@
             
             <div id="yoneticiTabGenelTakip" class="yonetici-tab">
                 <h2>📋 Genel Takip</h2>
-                <div id="yoneticiGenelTakipListesi" style="width: 100%;">
-                    <p style="text-align:center; color:#7f8c8d;">Yükleniyor...</p>
+                <div id="yoneticiGenelTakipListesi">
+                    <p style="text-align:left; color:#7f8c8d;">Yükleniyor...</p>
                 </div>
             </div>
 
             <div id="yoneticiTabMakina" class="yonetici-tab hidden">
                 <h2>⚙️ Makina Durumları</h2>
-                <div id="yoneticiMakinaListesi" style="width: 100%;">
-                    <p style="text-align:center; color:#7f8c8d;">Yükleniyor...</p>
+                <div id="yoneticiMakinaListesi">
+                    <p style="text-align:left; color:#7f8c8d;">Yükleniyor...</p>
                 </div>
             </div>
 
             <div id="yoneticiTabPlan" class="yonetici-tab hidden">
                 <h2>📅 Üretim Planı</h2>
-                <div id="yoneticiPlanListesi" style="width: 100%;">
-                    <p style="text-align:center; color:#7f8c8d;">Yükleniyor...</p>
+                <div id="yoneticiPlanListesi">
+                    <p style="text-align:left; color:#7f8c8d;">Yükleniyor...</p>
                 </div>
             </div>
 
             <div id="yoneticiTabMakinaYuku" class="yonetici-tab hidden">
-                <h2>📊 Makina Yuku Özet</h2>
-                <div id="yoneticiMakinaYukuListesi" style="width: 100%;">
-                    <p style="text-align:center; color:#7f8c8d;">Yükleniyor...</p>
+                <h2>📊 Makina Yükü Özet</h2>
+                <div id="yoneticiMakinaYukuListesi">
+                    <p style="text-align:left; color:#7f8c8d;">Yükleniyor...</p>
                 </div>
             </div>
 
@@ -607,10 +608,10 @@
                 if(tamamlananlar.length > 0) {
                     takipDiv.innerHTML = tamamlananlar.map(x => x.html).join("");
                 } else {
-                    takipDiv.innerHTML = "<p style='text-align:center; color:#7f8c8d;'>Tamamlanan kayıt bulunmuyor.</p>";
+                    takipDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Tamamlanan kayıt bulunmuyor.</p>";
                 }
 
-                if(!aktifVar) makinaDiv.innerHTML = "<p style='text-align:center; color:#7f8c8d;'>Aktif işiniz bulunmuyor.</p>";
+                if(!aktifVar) makinaDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Aktif işiniz bulunmuyor.</p>";
             }
         } catch(e) {
             makinaDiv.innerHTML = "Veriler yüklenemedi.";
@@ -798,7 +799,7 @@
                             listeVerileri.push({
                                 tarih: tarih,
                                 html: `
-                                <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px; width: 100%;">
+                                <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px;">
                                     <div onclick="silYoneticiKayit('${item.id}')" style="position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: #c0392b; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; z-index: 1;">Sil</div>
                                     <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "torna")'>
                                         <p style="font-size: 17px; font-weight: bold; margin-bottom: 6px; color: #2c3e50;">${isemriNo}</p>
@@ -816,7 +817,7 @@
                             listeVerileri.push({
                                 tarih: tarih,
                                 html: `
-                                <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px; width: 100%;">
+                                <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px;">
                                     <div onclick="silYoneticiKayit('${item.id}')" style="position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: #c0392b; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; z-index: 1;">Sil</div>
                                     <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "dik")'>
                                         <p style="font-size: 17px; font-weight: bold; margin-bottom: 6px; color: #2c3e50;">${isemriNo}</p>
@@ -836,7 +837,7 @@
                 if(listeVerileri.length > 0) {
                     listDiv.innerHTML = listeVerileri.map(x => x.html).join("");
                 } else {
-                    listDiv.innerHTML = "<p style='text-align:center; color:#7f8c8d;'>Aktif takip kaydı bulunmuyor.</p>";
+                    listDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Aktif takip kaydı bulunmuyor.</p>";
                 }
             }
         } catch(e) { listDiv.innerHTML = "Veriler yüklenemedi."; }
@@ -876,7 +877,7 @@
                         }
                     }
                 });
-                if(!varMi) listDiv.innerHTML = "<p style='text-align:center; color:#7f8c8d;'>Çalışan aktif makina bulunmuyor.</p>";
+                if(!varMi) listDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Çalışan aktif makina bulunmuyor.</p>";
             }
         } catch(e) { listDiv.innerHTML = "Veriler yüklenemedi."; }
     }
@@ -907,7 +908,7 @@
                         <p style="font-size:11px; color:#666; margin-top:5px; text-align:left;">Detaylar için dokun 🔍</p>
                     </div>`;
                 });
-                if(!varMi) listDiv.innerHTML = "<p style='text-align:center; color:#7f8c8d;'>Aktif plan kaydı bulunmuyor.</p>";
+                if(!varMi) listDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Aktif plan kaydı bulunmuyor.</p>";
             }
         } catch(e) { listDiv.innerHTML = "Veriler yüklenemedi."; }
     }
