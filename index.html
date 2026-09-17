@@ -2,114 +2,190 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <!-- TELEFON UYGULAMASI GİBİ OLMASI İÇİN YAKINLAŞTIRMA VE KAYDIRMA ENGELLENDİ -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- MOBİL UYGULAMA HİSSİ İÇİN TAM EKRAN VE ZOOM ENGELLENDİ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>EAGEAN DYNAMICS - CNC Atölye Mobil Terminali</title>
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="icon" type="image/png" href="logo.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        /* SAĞA SOLA KAYMAYI ÖNLEMEK İÇİN OVERFLOW-X HIDDEN EKLENDİ */
         body { 
-            background-color: #f4f6f9; 
+            background-color: #121824; /* Ekran görüntüsündeki koyu ton */
+            color: #ffffff;
             margin: 0; 
             padding: 0; 
             display: flex; 
             justify-content: center; 
             align-items: flex-start; 
-            min-height: 100vh; 
-            padding-top: 10px; 
-            padding-bottom: 70px; 
-            overflow-x: hidden; 
+            width: 100vw;
+            height: 100vh;
+            height: -webkit-fill-available;
+            overflow: hidden; 
             touch-action: pan-x pan-y;
         }
-        
-        .container { width: 100%; max-width: 420px; background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; margin: 0 auto; text-align: left; }
-        
-        .brand-header { text-align: center; margin-bottom: 20px; }
-        .brand-header img { width: 55px; height: 55px; object-fit: contain; margin-bottom: 5px; }
-        .brand-header h1 { font-size: 18px; color: #2c3e50; margin: 0; font-weight: bold; letter-spacing: 1px; }
 
-        /* AÇILIŞ SPLASH EKRANI STİLİ */
+        html {
+            height: -webkit-fill-available;
+        }
+        
+        .container { 
+            width: 100%; 
+            height: 100%;
+            max-width: 480px; 
+            background: #121824; 
+            padding: 15px; 
+            display: flex;
+            flex-direction: column;
+            position: relative; 
+            margin: 0 auto; 
+            text-align: left; 
+            overflow: hidden;
+        }
+        
+        .brand-header { text-align: center; margin-bottom: 10px; margin-top: 5px; flex-shrink: 0; }
+        .brand-header img { width: 45px; height: 45px; object-fit: contain; margin-bottom: 2px; }
+        .brand-header h1 { font-size: 16px; color: #ffffff; margin: 0; font-weight: bold; letter-spacing: 1.5px; }
+
+        /* AÇILIŞ SPLASH EKRANI (WhatsApp Tarzı) */
         #splashScreen {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: #2c3e50;
+            background-color: #121824;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 9999;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.4s ease;
         }
         #splashScreen img {
-            width: 90px;
-            height: 90px;
+            width: 80px;
+            height: 80px;
             object-fit: contain;
             margin-bottom: 15px;
-            animation: pulse 1.2s infinite alternate;
+            animation: pulse 1s infinite alternate;
         }
         #splashScreen h1 {
             color: #ffffff;
-            font-size: 22px;
+            font-size: 20px;
             letter-spacing: 2px;
             margin: 0;
             font-weight: bold;
         }
         @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.8; }
-            100% { transform: scale(1.08); opacity: 1; }
+            0% { transform: scale(1); opacity: 0.85; }
+            100% { transform: scale(1.06); opacity: 1; }
         }
 
-        .menu-icon { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #333; }
-        .dropdown-menu { display: none; position: absolute; top: 45px; right: 20px; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; width: 180px; text-align: left; }
-        .dropdown-menu div { padding: 10px 15px; font-size: 14px; cursor: pointer; border-bottom: 1px solid #eee; }
-        .dropdown-menu div:hover { background-color: #f1f1f1; }
+        .menu-icon { position: absolute; top: 15px; right: 15px; font-size: 22px; cursor: pointer; color: #ffffff; z-index: 50; }
+        .dropdown-menu { display: none; position: absolute; top: 45px; right: 15px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 200; width: 190px; text-align: left; }
+        .dropdown-menu div { padding: 12px 15px; font-size: 14px; cursor: pointer; border-bottom: 1px solid #334155; color: #f8fafc; }
+        .dropdown-menu div:hover { background-color: #334155; }
 
-        h2 { text-align: left; color: #2c3e50; margin-bottom: 15px; font-size: 20px; }
+        h2 { text-align: left; color: #38bdf8; margin-bottom: 12px; font-size: 18px; font-weight: 600; }
         .form-group { margin-bottom: 12px; text-align: left; }
-        label { display: block; margin-bottom: 4px; font-weight: bold; color: #555; font-size: 13px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #94a3b8; font-size: 13px; }
         
-        /* MOBİLDE INPUTLARIN SAYFAYI TAŞIRMASINI ÖNLEMEK İÇİN MAX-WIDTH 100% */
         input[type="text"], input[type="password"], input[type="datetime-local"], select, textarea { 
             width: 100%; 
-            max-width: 100%;
-            padding: 10px; 
-            border: 1px solid #ccc; 
-            border-radius: 6px; 
+            padding: 11px; 
+            background-color: #1e293b;
+            border: 1px solid #334155; 
+            border-radius: 8px; 
             font-size: 14px; 
+            color: #ffffff;
             text-align: left; 
+            outline: none;
         }
+        input:focus, select:focus { border-color: #0ea5e9; }
         
-        .remember-group { display: flex; align-items: center; margin-bottom: 15px; font-size: 14px; color: #555; cursor: pointer; text-align: left; }
-        .remember-group input { width: 18px; height: 18px; margin-right: 8px; cursor: pointer; }
+        .remember-group { display: flex; align-items: center; margin-bottom: 15px; font-size: 14px; color: #cbd5e1; cursor: pointer; }
+        .remember-group input { width: 18px; height: 18px; margin-right: 8px; accent-color: #0ea5e9; cursor: pointer; }
 
-        button { width: 100%; padding: 11px; background-color: #2980b9; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px; text-align: center; }
-        button:hover { background-color: #2471a3; }
+        button { width: 100%; padding: 12px; background-color: #0ea5e9; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 5px; text-align: center; }
+        button:hover { background-color: #0284c7; }
         
-        .hidden { display: none; }
-        .screen { width: 100%; text-align: left; }
+        .hidden { display: none !important; }
+        .screen { width: 100%; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         
-        .bottom-nav { display: flex; justify-content: space-around; background: #2c3e50; padding: 10px 0; border-radius: 0 0 12px 12px; position: fixed; bottom: 0; left: 0; right: 0; width: 100%; max-width: 420px; margin: 0 auto; z-index: 100; }
-        .bottom-nav button { background: none; color: #bdc3c7; border: none; font-size: 11px; font-weight: bold; cursor: pointer; margin: 0; padding: 5px; text-align: center; width: auto; }
-        .bottom-nav button.active { color: #ffffff; border-bottom: 2px solid #3498db; }
+        /* WHATSAPP TARZI ALT NAVİGASYON ÇUBUĞU */
+        .bottom-nav { 
+            display: flex; 
+            justify-content: space-around; 
+            background: #182232; 
+            padding: 8px 2px; 
+            border-top: 1px solid #2a374a;
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            width: 100%; 
+            z-index: 100; 
+        }
+        .bottom-nav button { 
+            background: none; 
+            color: #8c9bae; 
+            border: none; 
+            font-size: 11px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            margin: 0; 
+            padding: 6px 2px; 
+            text-align: center; 
+            width: auto; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+        .bottom-nav button span { font-size: 16px; }
+        .bottom-nav button.active { color: #38bdf8; }
 
-        .content-area { padding-bottom: 50px; text-align: left; }
-        .card { background: #ecf0f1; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; text-align: left; word-break: break-word; }
+        .content-area { 
+            flex: 1;
+            overflow-y: auto; 
+            padding-bottom: 70px; 
+            padding-top: 5px;
+            text-align: left; 
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .card { 
+            background: #1e293b; 
+            border: 1px solid #334155;
+            padding: 14px; 
+            border-radius: 10px; 
+            margin-bottom: 10px; 
+            font-size: 13px; 
+            color: #f1f5f9;
+            text-align: left; 
+            word-break: break-word; 
+        }
         .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 11px; }
-        .bg-green { background-color: #27ae60; }
-        .bg-red { background-color: #c0392b; }
-        .bg-blue { background-color: #2980b9; }
-        .bg-orange { background-color: #d35400; }
+        .bg-green { background-color: #16a34a; }
+        .bg-red { background-color: #dc2626; }
+        .bg-blue { background-color: #0284c7; }
+        .bg-orange { background-color: #ea580c; }
         
-        .btn-row { display: flex; gap: 8px; margin-top: 8px; }
+        .btn-row { display: flex; gap: 8px; margin-top: 10px; }
+
+        /* Login Ekranı Kart Kutusu */
+        .login-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- AÇILIŞTA ÇIKACAK LOGO EKRANI (SPLASH SCREEN) -->
+    <!-- AÇILIŞ SPLASH EKRANI -->
     <div id="splashScreen">
         <img src="logo.png" alt="Logo">
         <h1>EAGEAN DYNAMICS</h1>
@@ -131,26 +207,28 @@
     <div id="panelMenuIcon" class="menu-icon hidden" onclick="toggleMenu('panelDropdown')">⋮</div>
     <div id="panelDropdown" class="dropdown-menu">
         <div id="bildirimMenuText" onclick="toggleBildirimler()">🔔 Bildirim Aç</div>
-        <div onclick="cikisYap()" style="color: #c0392b; font-weight: bold;">🚪 Çıkış Yap</div>
+        <div onclick="cikisYap()" style="color: #f87171; font-weight: bold;">🚪 Çıkış Yap</div>
     </div>
 
     <!-- 1. GİRİŞ EKRANI -->
     <div id="loginScreen" class="screen">
-        <h2 id="loginTitle">Giriş Yap</h2>
-        <div class="form-group">
-            <label>Kullanıcı Adı</label>
-            <input type="text" id="username" placeholder="Kullanıcı adınızı girin">
-        </div>
-        <div class="form-group">
-            <label>Şifre</label>
-            <input type="password" id="password" placeholder="Şifrenizi girin">
-        </div>
-        
-        <label class="remember-group">
-            <input type="checkbox" id="rememberMe"> Oturumu açık tut
-        </label>
+        <div class="login-card">
+            <h2 id="loginTitle" style="text-align: center; margin-bottom: 20px;">OPERATÖR GİRİŞİ</h2>
+            <div class="form-group">
+                <label>Kullanıcı Adı:</label>
+                <input type="text" id="username" placeholder="Kullanıcı adınız">
+            </div>
+            <div class="form-group">
+                <label>Şifre:</label>
+                <input type="password" id="password" placeholder="Şifreniz">
+            </div>
+            
+            <label class="remember-group">
+                <input type="checkbox" id="rememberMe"> Oturumu Açık Tut
+            </label>
 
-        <button onclick="handleLogin()">Giriş Yap</button>
+            <button onclick="handleLogin()">GİRİŞ YAP</button>
+        </div>
     </div>
 
     <!-- 2. OPERATÖR ANA EKRANI -->
@@ -184,7 +262,7 @@
                     <input type="text" id="opAdet" placeholder="Adet girin">
                 </div>
                 <div class="form-group">
-                    <label>Tarih ve Saat (Değiştirilebilir)</label>
+                    <label>Tarih ve Saat</label>
                     <input type="datetime-local" id="opTarihSaat">
                 </div>
                 <button class="bg-green" onclick="isEmriniBaslatSaha()">▶️ İşi Başlat</button>
@@ -192,9 +270,9 @@
 
             <!-- SEKME 2: MAKİNA -->
             <div id="tabMakina" class="op-tab hidden">
-                <h2>⚙️ Aktif Makina İşlemleri</h2>
+                <h2>⚙️ MAKİNA DURUMU</h2>
                 <div id="aktifMakinaListesi">
-                    <p style="text-align:left; color:#7f8c8d;">Aktif iş bulunmuyor.</p>
+                    <p style="text-align:left; color:#94a3b8;">Devam eden iş yok.</p>
                 </div>
             </div>
 
@@ -202,16 +280,16 @@
             <div id="tabGenelTakip" class="op-tab hidden">
                 <h2>📋 Genel Takip & Geçmiş</h2>
                 <div id="genelTakipListesi">
-                    <p style="text-align:left; color:#7f8c8d;">Tamamlanan kayıt bulunmuyor.</p>
+                    <p style="text-align:left; color:#94a3b8;">Tamamlanan kayıt bulunmuyor.</p>
                 </div>
             </div>
 
         </div>
 
         <div class="bottom-nav">
-            <button id="btnTab1" class="active" onclick="switchOpTab('isBaslat')">🚀 İş Başlat</button>
-            <button id="btnTab2" onclick="switchOpTab('makina')">⚙️ Makina</button>
-            <button id="btnTab3" onclick="switchOpTab('genelTakip')">📋 Genel Takip</button>
+            <button id="btnTab1" class="active" onclick="switchOpTab('isBaslat')"><span>🚀</span>İş Başlat</button>
+            <button id="btnTab2" onclick="switchOpTab('makina')"><span>⚙️</span>Makina</button>
+            <button id="btnTab3" onclick="switchOpTab('genelTakip')"><span>📋</span>Genel Takip</button>
         </div>
     </div>
 
@@ -222,38 +300,38 @@
             <div id="yoneticiTabGenelTakip" class="yonetici-tab">
                 <h2>📋 Genel Takip</h2>
                 <div id="yoneticiGenelTakipListesi">
-                    <p style="text-align:left; color:#7f8c8d;">Yükleniyor...</p>
+                    <p style="text-align:left; color:#94a3b8;">Yükleniyor...</p>
                 </div>
             </div>
 
             <div id="yoneticiTabMakina" class="yonetici-tab hidden">
                 <h2>⚙️ Makina Durumları</h2>
                 <div id="yoneticiMakinaListesi">
-                    <p style="text-align:left; color:#7f8c8d;">Yükleniyor...</p>
+                    <p style="text-align:left; color:#94a3b8;">Yükleniyor...</p>
                 </div>
             </div>
 
             <div id="yoneticiTabPlan" class="yonetici-tab hidden">
                 <h2>📅 Üretim Planı</h2>
                 <div id="yoneticiPlanListesi">
-                    <p style="text-align:left; color:#7f8c8d;">Yükleniyor...</p>
+                    <p style="text-align:left; color:#94a3b8;">Yükleniyor...</p>
                 </div>
             </div>
 
             <div id="yoneticiTabMakinaYuku" class="yonetici-tab hidden">
                 <h2>📊 Makina Yükü Özet</h2>
                 <div id="yoneticiMakinaYukuListesi">
-                    <p style="text-align:left; color:#7f8c8d;">Yükleniyor...</p>
+                    <p style="text-align:left; color:#94a3b8;">Yükleniyor...</p>
                 </div>
             </div>
 
         </div>
 
         <div class="bottom-nav">
-            <button id="yBtnTab1" class="active" onclick="switchYoneticiTab('genelTakip')">📋 Genel</button>
-            <button id="yBtnTab2" onclick="switchYoneticiTab('makina')">⚙️ Makina</button>
-            <button id="yBtnTab3" onclick="switchYoneticiTab('plan')">📅 Plan</button>
-            <button id="yBtnTab4" onclick="switchYoneticiTab('makinaYuku')">📊 Yük</button>
+            <button id="yBtnTab1" class="active" onclick="switchYoneticiTab('genelTakip')"><span>📋</span>Genel</button>
+            <button id="yBtnTab2" onclick="switchYoneticiTab('makina')"><span>⚙️</span>Makina</button>
+            <button id="yBtnTab3" onclick="switchYoneticiTab('plan')"><span>📅</span>Plan</button>
+            <button id="yBtnTab4" onclick="switchYoneticiTab('makinaYuku')"><span>📊</span>Yük</button>
         </div>
     </div>
 </div>
@@ -268,11 +346,9 @@
     let clockInterval = null;
     let bildirimlerAcik = false;
 
-    // GERÇEK ZAMANLI (REALTIME) DİNLEYİCİ
     supabaseClient
       .channel('public:cnc_is_emirleri')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cnc_is_emirleri' }, payload => {
-          console.log('Veritabanında değişiklik algılandı:', payload);
           if (bildirimlerAcik) {
               alert("🔔 Bildirim: Atölyede iş emri durumu güncellendi veya bitti!");
           }
@@ -300,9 +376,9 @@
             const splash = document.getElementById("splashScreen");
             if (splash) {
                 splash.style.opacity = "0";
-                setTimeout(() => splash.remove(), 500);
+                setTimeout(() => splash.remove(), 400);
             }
-        }, 1500);
+        }, 1200);
 
         const savedUser = localStorage.getItem("cnc_logged_user");
         const savedRole = localStorage.getItem("cnc_logged_role");
@@ -318,7 +394,7 @@
 
     function setLoginType(role) {
         activeLoginRole = role;
-        document.getElementById("loginTitle").innerText = role === "Yonetici" ? "👑 Yönetici Girişi" : "👤 Operatör Girişi";
+        document.getElementById("loginTitle").innerText = role === "Yonetici" ? "YÖNETİCİ GİRİŞİ" : "OPERATÖR GİRİŞİ";
         toggleMenu('loginDropdown');
     }
 
@@ -364,7 +440,6 @@
                 alert("Kullanıcı adı veya şifre hatalı!");
             }
         } catch (err) {
-            console.error("Giriş hatası:", err);
             alert("Bağlantı hatası oluştu.");
         }
     }
@@ -413,7 +488,7 @@
                     select.innerHTML += `<option value="${t.name}">${t.name} (${t.type})</option>`;
                 });
             }
-        } catch(e) { console.error("Tezgah yükleme hatası:", e); }
+        } catch(e) {}
     }
 
     function switchOpTab(tabName) {
@@ -545,15 +620,13 @@
                 }
                 d.isStarted = true;
 
-                const { error } = await supabaseClient
+                await supabaseClient
                     .from("cnc_is_emirleri")
                     .update({
                         hedef_adet: parseInt(adet),
                         durum: JSON.stringify(d)
                     })
                     .eq("id", record.id);
-
-                if(error) throw error;
             } else {
                 let d = {
                     isStarted: true,
@@ -585,15 +658,14 @@
                     hedef_adet: parseInt(adet),
                     durum: JSON.stringify(d)
                 };
-                const { error } = await supabaseClient.from("cnc_is_emirleri").insert([yeniKayit]);
-                if(error) throw error;
+                await supabaseClient.from("cnc_is_emirleri").insert([yeniKayit]);
             }
             
             document.getElementById("opMalzemeKodu").value = "";
             document.getElementById("opAdet").value = "";
             switchOpTab("makina");
         } catch(e) {
-            alert("Kayıt oluşturulurken/güncellenirken hata: " + e.message);
+            alert("Kayıt oluşturulurken hata: " + e.message);
         }
     }
 
@@ -653,10 +725,10 @@
                                 }
 
                                 makinaDiv.innerHTML += `<div class="card">
-                                    <p style="font-size: 15px; font-weight: bold; color: #2c3e50;">${gostergeNo}</p>
+                                    <p style="font-size: 15px; font-weight: bold; color: #38bdf8;">${gostergeNo}</p>
                                     <p><strong>Operatör:</strong> ${aktifBolum === "torna" ? (d.torna_operator || '-') : (d.dik_operator || '-')}</p>
                                     <p><strong>Tezgah:</strong> ${tezgahAdi}</p>
-                                    <p><strong>Aktif Adım:</strong> ${aktifOpBaslik} (<span style="color:${aktifOpDurum==='Duruşta'?'orange':'blue'}">${aktifOpDurum}</span>)</p>
+                                    <p><strong>Aktif Adım:</strong> ${aktifOpBaslik} (<span style="color:${aktifOpDurum==='Duruşta'?'#fb923c':'#38bdf8'}">${aktifOpDurum}</span>)</p>
                                     <p><strong>Adet:</strong> ${item.hedef_adet}</p>
                                     ${aksiyonButonlari}
                                 </div>`;
@@ -668,11 +740,11 @@
                             tamamlananlar.push({
                                 tarih: tarih,
                                 html: `<div class="card" style="cursor:pointer;" onclick='detayGoster(${JSON.stringify(item)}, "torna")'>
-                                    <p style="font-size: 15px; font-weight: bold; color: #2c3e50;">${gostergeNo} <span style="color:#27ae60; font-size:12px;">[TORNA - BİTTİ]</span></p>
+                                    <p style="font-size: 15px; font-weight: bold; color: #38bdf8;">${gostergeNo} <span style="color:#4ade80; font-size:12px;">[TORNA - BİTTİ]</span></p>
                                     <p><strong>Operatör:</strong> ${d.torna_operator || '-'}</p>
                                     <p><strong>Tezgah:</strong> ${d.torna_tezgah || '-'}</p>
                                     <span class="status-badge bg-green">Tamamlandı</span>
-                                    <p style="font-size:11px; color:#666; margin-top:5px; text-align:left;">Detaylar için dokun 🔍</p>
+                                    <p style="font-size:11px; color:#94a3b8; margin-top:5px; text-align:left;">Detaylar için dokun 🔍</p>
                                 </div>`
                             });
                         }
@@ -682,11 +754,11 @@
                             tamamlananlar.push({
                                 tarih: tarih,
                                 html: `<div class="card" style="cursor:pointer;" onclick='detayGoster(${JSON.stringify(item)}, "dik")'>
-                                    <p style="font-size: 15px; font-weight: bold; color: #2c3e50;">${gostergeNo} <span style="color:#27ae60; font-size:12px;">[DİK İŞLEM - BİTTİ]</span></p>
+                                    <p style="font-size: 15px; font-weight: bold; color: #38bdf8;">${gostergeNo} <span style="color:#4ade80; font-size:12px;">[DİK İŞLEM - BİTTİ]</span></p>
                                     <p><strong>Operatör:</strong> ${d.dik_operator || '-'}</p>
                                     <p><strong>Tezgah:</strong> ${d.dik_tezgah || '-'}</p>
                                     <span class="status-badge bg-green">Tamamlandı</span>
-                                    <p style="font-size:11px; color:#666; margin-top:5px; text-align:left;">Detaylar için dokun 🔍</p>
+                                    <p style="font-size:11px; color:#94a3b8; margin-top:5px; text-align:left;">Detaylar için dokun 🔍</p>
                                 </div>`
                             });
                         }
@@ -698,10 +770,10 @@
                 if(tamamlananlar.length > 0) {
                     takipDiv.innerHTML = tamamlananlar.map(x => x.html).join("");
                 } else {
-                    takipDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Tamamlanan kayıt bulunmuyor.</p>";
+                    takipDiv.innerHTML = "<p style='text-align:left; color:#94a3b8;'>Tamamlanan kayıt bulunmuyor.</p>";
                 }
 
-                if(!aktifVar) makinaDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Aktif işiniz bulunmuyor.</p>";
+                if(!aktifVar) makinaDiv.innerHTML = "<p style='text-align:left; color:#94a3b8;'>Aktif işiniz bulunmuyor.</p>";
             }
         } catch(e) {
             makinaDiv.innerHTML = "Veriler yüklenemedi.";
@@ -732,11 +804,8 @@
                     opListesi[yeniAktifIdx].durum = "İşleniyor";
                     opListesi[yeniAktifIdx].baslangic = bitisZamani;
                 } else {
-                    if(bolumTipi === "torna") {
-                        d.tornaCompleted = true;
-                    } else if(bolumTipi === "dik") {
-                        d.dikCompleted = true;
-                    }
+                    if(bolumTipi === "torna") d.tornaCompleted = true;
+                    else if(bolumTipi === "dik") d.dikCompleted = true;
                     
                     if ((!d.torna_operasyonlar || d.tornaCompleted) && (!d.dik_operasyonlar || d.dikCompleted)) {
                         d.isCompleted = true;
@@ -806,34 +875,19 @@
         let detayStr = `DETAY\n\n`;
         let durusAciklamalari = [];
         
-        if (bolumTipi === "torna") {
-            if (d.torna_operasyonlar && d.torna_operasyonlar.length > 0) {
-                d.torna_operasyonlar.forEach(op => {
-                    detayStr += `• ${op.opNo}. Operasyon\n`;
-                    detayStr += `  Başlangıç: ${op.baslangic || '-'}\n`;
-                    detayStr += `  Bitiş: ${op.bitis || '-'}\n\n`;
-                    
-                    if(op.duruslar && op.duruslar.length > 0) {
-                        op.duruslar.forEach(dur => {
-                            if(dur.aciklama) durusAciklamalari.push(dur.aciklama);
-                        });
-                    }
-                });
-            }
-        } else if (bolumTipi === "dik") {
-            if (d.dik_operasyonlar && d.dik_operasyonlar.length > 0) {
-                d.dik_operasyonlar.forEach(op => {
-                    detayStr += `• ${op.opNo}. Operasyon\n`;
-                    detayStr += `  Başlangıç: ${op.baslangic || '-'}\n`;
-                    detayStr += `  Bitiş: ${op.bitis || '-'}\n\n`;
-                    
-                    if(op.duruslar && op.duruslar.length > 0) {
-                        op.duruslar.forEach(dur => {
-                            if(dur.aciklama) durusAciklamalari.push(dur.aciklama);
-                        });
-                    }
-                });
-            }
+        let opListesi = bolumTipi === "torna" ? d.torna_operasyonlar : d.dik_operasyonlar;
+        if (opListesi && opListesi.length > 0) {
+            opListesi.forEach(op => {
+                detayStr += `• ${op.opNo}. Operasyon\n`;
+                detayStr += `  Başlangıç: ${op.baslangic || '-'}\n`;
+                detayStr += `  Bitiş: ${op.bitis || '-'}\n\n`;
+                
+                if(op.duruslar && op.duruslar.length > 0) {
+                    op.duruslar.forEach(dur => {
+                        if(dur.aciklama) durusAciklamalari.push(dur.aciklama);
+                    });
+                }
+            });
         }
 
         if (durusAciklamalari.length > 0) {
@@ -845,20 +899,15 @@
     }
 
     let tsX = 0;
-    function ts(e) {
-        tsX = e.changedTouches[0].screenX;
-    }
+    function ts(e) { tsX = e.changedTouches[0].screenX; }
     function te(e, cardEl) {
         let teX = e.changedTouches[0].screenX;
-        if (tsX - teX > 40) {
-            cardEl.style.transform = "translateX(-80px)";
-        } else if (teX - tsX > 40) {
-            cardEl.style.transform = "translateX(0)";
-        }
+        if (tsX - teX > 40) cardEl.style.transform = "translateX(-80px)";
+        else if (teX - tsX > 40) cardEl.style.transform = "translateX(0)";
     }
 
     async function silYoneticiKayit(itemId) {
-        if (confirm("Bu iş emrini veritabanından tamamen silmek istediğinize emin misiniz?")) {
+        if (confirm("Bu iş emrini tamamen silmek istediğinize emin misiniz?")) {
             try {
                 const { error } = await supabaseClient.from("cnc_is_emirleri").delete().eq("id", itemId);
                 if (error) throw error;
@@ -885,37 +934,33 @@
                         let isemriNo = getIsEmriNumarasi(item, d);
 
                         if (d.torna_operasyonlar) {
-                            let bittiMi = d.tornaCompleted;
-                            let tarih = d.torna_baslangic_tarih || "";
                             listeVerileri.push({
-                                tarih: tarih,
+                                tarih: d.torna_baslangic_tarih || "",
                                 html: `
                                 <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px;">
-                                    <div onclick="silYoneticiKayit('${item.id}')" style="position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: #c0392b; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; z-index: 1;">Sil</div>
+                                    <div onclick="silYoneticiKayit('${item.id}')" style="position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: #dc2626; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; z-index: 1;">Sil</div>
                                     <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "torna")'>
-                                        <p style="font-size: 17px; font-weight: bold; margin-bottom: 6px; color: #2c3e50;">${isemriNo}</p>
+                                        <p style="font-size: 16px; font-weight: bold; margin-bottom: 4px; color: #38bdf8;">${isemriNo}</p>
                                         <p><strong>Operatör:</strong> ${d.torna_operator || '-'}</p>
                                         <p><strong>Tezgah:</strong> ${d.torna_tezgah || '-'}</p>
-                                        <span class="status-badge ${bittiMi ? 'bg-green' : 'bg-blue'}" style="margin-top:4px;">${bittiMi ? 'Tamamlandı' : 'Devam Ediyor'}</span>
-                                        <p style="font-size:10px; color:#888; margin-top:4px;">(Sola kaydırarak sil)</p>
+                                        <span class="status-badge ${d.tornaCompleted ? 'bg-green' : 'bg-blue'}" style="margin-top:4px;">${d.tornaCompleted ? 'Tamamlandı' : 'Devam Ediyor'}</span>
+                                        <p style="font-size:10px; color:#94a3b8; margin-top:4px;">(Sola kaydırarak sil)</p>
                                     </div>
                                 </div>`
                             });
                         }
                         if (d.dik_operasyonlar) {
-                            let bittiMi = d.dikCompleted;
-                            let tarih = d.dik_baslangic_tarih || "";
                             listeVerileri.push({
-                                tarih: tarih,
+                                tarih: d.dik_baslangic_tarih || "",
                                 html: `
                                 <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px;">
-                                    <div onclick="silYoneticiKayit('${item.id}')" style="position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: #c0392b; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; z-index: 1;">Sil</div>
+                                    <div onclick="silYoneticiKayit('${item.id}')" style="position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: #dc2626; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; z-index: 1;">Sil</div>
                                     <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "dik")'>
-                                        <p style="font-size: 17px; font-weight: bold; margin-bottom: 6px; color: #2c3e50;">${isemriNo}</p>
+                                        <p style="font-size: 16px; font-weight: bold; margin-bottom: 4px; color: #38bdf8;">${isemriNo}</p>
                                         <p><strong>Operatör:</strong> ${d.dik_operator || '-'}</p>
                                         <p><strong>Tezgah:</strong> ${d.dik_tezgah || '-'}</p>
-                                        <span class="status-badge ${bittiMi ? 'bg-green' : 'bg-blue'}" style="margin-top:4px;">${bittiMi ? 'Tamamlandı' : 'Devam Ediyor'}</span>
-                                        <p style="font-size:10px; color:#888; margin-top:4px;">(Sola kaydırarak sil)</p>
+                                        <span class="status-badge ${d.dikCompleted ? 'bg-green' : 'bg-blue'}" style="margin-top:4px;">${d.dikCompleted ? 'Tamamlandı' : 'Devam Ediyor'}</span>
+                                        <p style="font-size:10px; color:#94a3b8; margin-top:4px;">(Sola kaydırarak sil)</p>
                                     </div>
                                 </div>`
                             });
@@ -924,12 +969,7 @@
                 });
 
                 listeVerileri.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
-
-                if(listeVerileri.length > 0) {
-                    listDiv.innerHTML = listeVerileri.map(x => x.html).join("");
-                } else {
-                    listDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Aktif takip kaydı bulunmuyor.</p>";
-                }
+                listDiv.innerHTML = listeVerileri.length > 0 ? listeVerileri.map(x => x.html).join("") : "<p style='color:#94a3b8;'>Aktif kayıt yok.</p>";
             }
         } catch(e) { listDiv.innerHTML = "Veriler yüklenemedi."; }
     }
@@ -951,25 +991,15 @@
                         varMi = true;
                         if (d.torna_tezgah && !d.tornaCompleted) {
                             let aktifOp = d.torna_operasyonlar ? d.torna_operasyonlar[d.torna_aktifOpIndex] : null;
-                            listDiv.innerHTML += `<div class="card">
-                                <p style="font-size: 15px; font-weight: bold; color: #2c3e50;">${gostergeNo}</p>
-                                <p><strong>Operatör:</strong> ${d.torna_operator || '-'}</p>
-                                <p><strong>Tezgah:</strong> ${d.torna_tezgah}</p>
-                                <p><strong>Op:</strong> ${aktifOp ? aktifOp.opNo+'. Op ('+aktifOp.durum+')' : '-'}</p>
-                            </div>`;
+                            listDiv.innerHTML += `<div class="card"><p style="font-size: 15px; font-weight: bold; color: #38bdf8;">${gostergeNo}</p><p><strong>Operatör:</strong> ${d.torna_operator || '-'}</p><p><strong>Tezgah:</strong> ${d.torna_tezgah}</p><p><strong>Op:</strong> ${aktifOp ? aktifOp.opNo+'. Op ('+aktifOp.durum+')' : '-'}</p></div>`;
                         }
                         if (d.dik_tezgah && !d.dikCompleted) {
                             let aktifOp = d.dik_operasyonlar ? d.dik_operasyonlar[d.dik_aktifOpIndex] : null;
-                            listDiv.innerHTML += `<div class="card">
-                                <p style="font-size: 15px; font-weight: bold; color: #2c3e50;">${gostergeNo}</p>
-                                <p><strong>Operatör:</strong> ${d.dik_operator || '-'}</p>
-                                <p><strong>Tezgah:</strong> ${d.dik_tezgah}</p>
-                                <p><strong>Op:</strong> ${aktifOp ? aktifOp.opNo+'. Op ('+aktifOp.durum+')' : '-'}</p>
-                            </div>`;
+                            listDiv.innerHTML += `<div class="card"><p style="font-size: 15px; font-weight: bold; color: #38bdf8;">${gostergeNo}</p><p><strong>Operatör:</strong> ${d.dik_operator || '-'}</p><p><strong>Tezgah:</strong> ${d.dik_tezgah}</p><p><strong>Op:</strong> ${aktifOp ? aktifOp.opNo+'. Op ('+aktifOp.durum+')' : '-'}</p></div>`;
                         }
                     }
                 });
-                if(!varMi) listDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Çalışan aktif makina bulunmuyor.</p>";
+                if(!varMi) listDiv.innerHTML = "<p style='color:#94a3b8;'>Çalışan makina bulunmuyor.</p>";
             }
         } catch(e) { listDiv.innerHTML = "Veriler yüklenemedi."; }
     }
@@ -986,20 +1016,13 @@
                 data.forEach(item => {
                     let d = {};
                     try { d = JSON.parse(item.durum || "{}"); } catch(e){}
-                    
                     if (d.isCompleted) return;
 
                     varMi = true;
                     let isemriKodu = getIsEmriNumarasi(item, d);
-                    let durumMetni = d.isStarted ? "Planlandı / Devam Ediyor" : "Planlandı (Bekliyor)";
-                    
-                    listDiv.innerHTML += `<div class="card" style="cursor:pointer;" onclick='yoneticiPlanDetayGoster(${JSON.stringify(item)})'>
-                        <p style="font-size: 17px; font-weight: bold; margin-bottom: 4px; color: #2c3e50;">${isemriKodu}</p>
-                        <span class="status-badge bg-blue">${durumMetni}</span>
-                        <p style="font-size:11px; color:#666; margin-top:5px; text-align:left;">Detaylar için dokun 🔍</p>
-                    </div>`;
+                    listDiv.innerHTML += `<div class="card" style="cursor:pointer;" onclick='yoneticiPlanDetayGoster(${JSON.stringify(item)})'><p style="font-size: 16px; font-weight: bold; margin-bottom: 4px; color: #38bdf8;">${isemriKodu}</p><span class="status-badge bg-blue">${d.isStarted ? 'Devam Ediyor' : 'Planlandı'}</span><p style="font-size:11px; color:#94a3b8; margin-top:4px;">Detay için dokun 🔍</p></div>`;
                 });
-                if(!varMi) listDiv.innerHTML = "<p style='text-align:left; color:#7f8c8d;'>Aktif plan kaydı bulunmuyor.</p>";
+                if(!varMi) listDiv.innerHTML = "<p style='color:#94a3b8;'>Aktif plan kaydı yok.</p>";
             }
         } catch(e) { listDiv.innerHTML = "Veriler yüklenemedi."; }
     }
@@ -1008,33 +1031,14 @@
         let d = {};
         try { d = JSON.parse(item.durum || "{}"); } catch(e){}
         let isemriKodu = getIsEmriNumarasi(item, d);
+        let detayStr = `PLAN DETAYI\n\nİş Emri: ${isemriKodu}\nHedef Adet: ${item.hedef_adet || '-'}\n\n`;
         
-        let detayStr = `📋 PLAN İŞ EMRİ DETAYI\n`;
-        detayStr += `----------------------------------\n`;
-        detayStr += `📦 İş Emri: ${isemriKodu}\n`;
-        detayStr += `📊 Hedef Adet: ${item.hedef_adet || '-'}\n`;
-        detayStr += `🏁 İş Durumu: ${d.isCompleted ? 'Tamamlandı' : 'Devam Ediyor / Planlandı'}\n\n`;
-        
-        detayStr += `--- TORNA BÖLÜMÜ ---\n`;
-        detayStr += `Tezgah: ${d.torna_tezgah || 'Yok'} | Operatör: ${d.torna_operator || '-'}\n`;
-        if(d.torna_operasyonlar && d.torna_operasyonlar.length > 0) {
-            d.torna_operasyonlar.forEach(op => {
-                detayStr += `• ${op.opNo}. Op -> Durum: ${op.durum} (Başl: ${op.baslangic || '-'} | Bitis: ${op.bitis || '-'})\n`;
-            });
-        } else {
-            detayStr += `Torna operasyon kaydı yok.\n`;
+        if(d.torna_tezgah) {
+            detayStr += `[TORNA]: ${d.torna_tezgah} (${d.torna_operator || '-'})\n`;
         }
-
-        detayStr += `\n--- DİK İŞLEM BÖLÜMÜ ---\n`;
-        detayStr += `Tezgah: ${d.dik_tezgah || 'Yok'} | Operatör: ${d.dik_operator || '-'}\n`;
-        if(d.dik_operasyonlar && d.dik_operasyonlar.length > 0) {
-            d.dik_operasyonlar.forEach(op => {
-                detayStr += `• ${op.opNo}. Op -> Durum: ${op.durum} (Başl: ${op.baslangic || '-'} | Bitis: ${op.bitis || '-'})\n`;
-            });
-        } else {
-            detayStr += `Dik işlem operasyon kaydı yok.\n`;
+        if(d.dik_tezgah) {
+            detayStr += `[DİK İŞLEM]: ${d.dik_tezgah} (${d.dik_operator || '-'})\n`;
         }
-
         alert(detayStr);
     }
 
@@ -1045,8 +1049,7 @@
         try {
             const { data } = await supabaseClient.from("cnc_is_emirleri").select("*");
             if(data) {
-                let aktifTornaIs = 0;
-                let aktifDikIs = 0;
+                let aktifTornaIs = 0, aktifDikIs = 0;
                 data.forEach(item => {
                     let d = JSON.parse(item.durum || "{}");
                     if(d.isStarted && !d.isCompleted) {
@@ -1054,15 +1057,7 @@
                         if(d.dik_tezgah && !d.dikCompleted) aktifDikIs++;
                     }
                 });
-
-                listDiv.innerHTML = `
-                    <div class="card">
-                        <p>🌀 <strong>Torna Grubu Aktif İş Yükü:</strong> ${aktifTornaIs} Adet Makina Çalışıyor</p>
-                    </div>
-                    <div class="card">
-                        <p>📐 <strong>Dik İşlem Grubu Aktif İş Yükü:</strong> ${aktifDikIs} Adet Makina Çalışıyor</p>
-                    </div>
-                `;
+                listDiv.innerHTML = `<div class="card"><p>🌀 <strong>Torna Yükü:</strong> ${aktifTornaIs} Makina Çalışıyor</p></div><div class="card"><p>📐 <strong>Dik İşlem Yükü:</strong> ${aktifDikIs} Makina Çalışıyor</p></div>`;
             }
         } catch(e) { listDiv.innerHTML = "Veriler yüklenemedi."; }
     }
