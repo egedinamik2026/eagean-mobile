@@ -14,7 +14,7 @@
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent; }
         
         body { 
-            background-color: #121824; /* Ekran görüntüsündeki koyu ton */
+            background-color: #121824; 
             color: #ffffff;
             margin: 0; 
             padding: 0; 
@@ -38,6 +38,7 @@
             max-width: 480px; 
             background: #121824; 
             padding: 15px; 
+            padding-bottom: 75px; /* Alttaki sabit menü içeriği kapatmasın diye boşluk */
             display: flex;
             flex-direction: column;
             position: relative; 
@@ -46,11 +47,11 @@
             overflow: hidden;
         }
         
-        .brand-header { text-align: center; margin-bottom: 10px; margin-top: 5px; flex-shrink: 0; }
-        .brand-header img { width: 45px; height: 45px; object-fit: contain; margin-bottom: 2px; }
-        .brand-header h1 { font-size: 16px; color: #ffffff; margin: 0; font-weight: bold; letter-spacing: 1.5px; }
+        .brand-header { text-align: center; margin-bottom: 8px; margin-top: 2px; flex-shrink: 0; }
+        .brand-header img { width: 42px; height: 42px; object-fit: contain; margin-bottom: 2px; }
+        .brand-header h1 { font-size: 15px; color: #ffffff; margin: 0; font-weight: bold; letter-spacing: 1.5px; }
 
-        /* AÇILIŞ SPLASH EKRANI (WhatsApp Tarzı) */
+        /* AÇILIŞ SPLASH EKRANI */
         #splashScreen {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -112,7 +113,7 @@
         .hidden { display: none !important; }
         .screen { width: 100%; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* WHATSAPP TARZI ALT NAVİGASYON ÇUBUĞU */
+        /* AŞAĞIDA SABİT UYGULAMA ÇUBUĞU (WHATSAPP/INSTAGRAM TARZI) */
         .bottom-nav { 
             display: flex; 
             justify-content: space-around; 
@@ -148,7 +149,7 @@
         .content-area { 
             flex: 1;
             overflow-y: auto; 
-            padding-bottom: 70px; 
+            padding-bottom: 20px; 
             padding-top: 5px;
             text-align: left; 
             -webkit-overflow-scrolling: touch;
@@ -173,7 +174,6 @@
         
         .btn-row { display: flex; gap: 8px; margin-top: 10px; }
 
-        /* Login Ekranı Kart Kutusu */
         .login-card {
             background: #1e293b;
             border: 1px solid #334155;
