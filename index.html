@@ -2,7 +2,6 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <!-- MOBİL UYGULAMA HİSSİ İÇİN TAM EKRAN VE ZOOM ENGELLENDİ -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,23 +12,16 @@
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        body { 
+        html, body { 
             background-color: #121824; 
             color: #ffffff;
             margin: 0; 
             padding: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-start; 
-            width: 100vw;
-            height: 100vh;
-            height: -webkit-fill-available;
+            width: 100%;
+            height: 100%;
             overflow: hidden; 
-            touch-action: pan-x pan-y;
-        }
-
-        html {
-            height: -webkit-fill-available;
+            position: fixed;
+            touch-action: none;
         }
         
         .container { 
@@ -37,21 +29,21 @@
             height: 100%;
             max-width: 480px; 
             background: #121824; 
-            padding: 15px; 
-            padding-bottom: 75px; /* Alttaki sabit menü içeriği kapatmasın diye boşluk */
+            padding: 12px; 
+            padding-bottom: 70px; 
             display: flex;
             flex-direction: column;
-            position: relative; 
-            margin: 0 auto; 
-            text-align: left; 
-            overflow: hidden;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            overflow: hidden; 
         }
         
-        .brand-header { text-align: center; margin-bottom: 8px; margin-top: 2px; flex-shrink: 0; }
-        .brand-header img { width: 42px; height: 42px; object-fit: contain; margin-bottom: 2px; }
-        .brand-header h1 { font-size: 15px; color: #ffffff; margin: 0; font-weight: bold; letter-spacing: 1.5px; }
+        .brand-header { text-align: center; margin-bottom: 6px; margin-top: 2px; flex-shrink: 0; }
+        .brand-header img { width: 38px; height: 38px; object-fit: contain; margin-bottom: 2px; }
+        .brand-header h1 { font-size: 14px; color: #ffffff; margin: 0; font-weight: bold; letter-spacing: 1.5px; }
 
-        /* AÇILIŞ SPLASH EKRANI */
         #splashScreen {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -82,18 +74,18 @@
             100% { transform: scale(1.06); opacity: 1; }
         }
 
-        .menu-icon { position: absolute; top: 15px; right: 15px; font-size: 22px; cursor: pointer; color: #ffffff; z-index: 50; }
-        .dropdown-menu { display: none; position: absolute; top: 45px; right: 15px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 200; width: 190px; text-align: left; }
+        .menu-icon { position: absolute; top: 12px; right: 12px; font-size: 22px; cursor: pointer; color: #ffffff; z-index: 50; }
+        .dropdown-menu { display: none; position: absolute; top: 45px; right: 12px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); z-index: 200; width: 190px; text-align: left; }
         .dropdown-menu div { padding: 12px 15px; font-size: 14px; cursor: pointer; border-bottom: 1px solid #334155; color: #f8fafc; }
         .dropdown-menu div:hover { background-color: #334155; }
 
-        h2 { text-align: left; color: #38bdf8; margin-bottom: 12px; font-size: 18px; font-weight: 600; }
-        .form-group { margin-bottom: 12px; text-align: left; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #94a3b8; font-size: 13px; }
+        h2 { text-align: left; color: #38bdf8; margin-top: 5px; margin-bottom: 10px; font-size: 17px; font-weight: 600; }
+        .form-group { margin-bottom: 10px; text-align: left; }
+        label { display: block; margin-bottom: 4px; font-weight: 600; color: #94a3b8; font-size: 12px; }
         
         input[type="text"], input[type="password"], input[type="datetime-local"], select, textarea { 
             width: 100%; 
-            padding: 11px; 
+            padding: 10px; 
             background-color: #1e293b;
             border: 1px solid #334155; 
             border-radius: 8px; 
@@ -104,28 +96,28 @@
         }
         input:focus, select:focus { border-color: #0ea5e9; }
         
-        .remember-group { display: flex; align-items: center; margin-bottom: 15px; font-size: 14px; color: #cbd5e1; cursor: pointer; }
-        .remember-group input { width: 18px; height: 18px; margin-right: 8px; accent-color: #0ea5e9; cursor: pointer; }
+        .remember-group { display: flex; align-items: center; margin-bottom: 12px; font-size: 13px; color: #cbd5e1; cursor: pointer; }
+        .remember-group input { width: 16px; height: 16px; margin-right: 8px; accent-color: #0ea5e9; cursor: pointer; }
 
-        button { width: 100%; padding: 12px; background-color: #0ea5e9; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 5px; text-align: center; }
+        button { width: 100%; padding: 11px; background-color: #0ea5e9; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 4px; text-align: center; }
         button:hover { background-color: #0284c7; }
         
         .hidden { display: none !important; }
-        .screen { width: 100%; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .screen { width: 100%; flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         
-        /* AŞAĞIDA SABİT UYGULAMA ÇUBUĞU (WHATSAPP/INSTAGRAM TARZI) */
         .bottom-nav { 
             display: flex; 
             justify-content: space-around; 
             background: #182232; 
-            padding: 8px 2px; 
+            padding: 8px 0; 
             border-top: 1px solid #2a374a;
             position: absolute; 
             bottom: 0; 
             left: 0; 
             right: 0; 
             width: 100%; 
-            z-index: 100; 
+            z-index: 1000; 
+            flex-shrink: 0;
         }
         .bottom-nav button { 
             background: none; 
@@ -135,30 +127,31 @@
             font-weight: 600; 
             cursor: pointer; 
             margin: 0; 
-            padding: 6px 2px; 
+            padding: 4px 2px; 
             text-align: center; 
             width: auto; 
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 3px;
+            gap: 2px;
         }
-        .bottom-nav button span { font-size: 16px; }
+        .bottom-nav button span { font-size: 15px; }
         .bottom-nav button.active { color: #38bdf8; }
 
         .content-area { 
             flex: 1;
             overflow-y: auto; 
             padding-bottom: 20px; 
-            padding-top: 5px;
+            padding-top: 2px;
             text-align: left; 
             -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
         }
 
         .card { 
             background: #1e293b; 
             border: 1px solid #334155;
-            padding: 14px; 
+            padding: 12px; 
             border-radius: 10px; 
             margin-bottom: 10px; 
             font-size: 13px; 
@@ -166,33 +159,24 @@
             text-align: left; 
             word-break: break-word; 
         }
-        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; color: white; font-weight: bold; font-size: 11px; }
+        .status-badge { display: inline-block; padding: 3px 7px; border-radius: 4px; color: white; font-weight: bold; font-size: 11px; }
         .bg-green { background-color: #16a34a; }
         .bg-red { background-color: #dc2626; }
         .bg-blue { background-color: #0284c7; }
         .bg-orange { background-color: #ea580c; }
         
-        .btn-row { display: flex; gap: 8px; margin-top: 10px; }
-
-        .login-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            padding: 20px;
-            border-radius: 12px;
-            margin-top: 10px;
-        }
+        .btn-row { display: flex; gap: 8px; margin-top: 8px; }
+        .login-card { background: #1e293b; border: 1px solid #334155; padding: 18px; border-radius: 12px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <!-- AÇILIŞ SPLASH EKRANI -->
     <div id="splashScreen">
         <img src="logo.png" alt="Logo">
         <h1>EAGEAN DYNAMICS</h1>
     </div>
 
 <div class="container">
-    <!-- LOGO VE MARKA ALANI -->
     <div class="brand-header">
         <img src="logo.png" alt="Logo">
         <h1>EAGEAN DYNAMICS</h1>
@@ -213,7 +197,7 @@
     <!-- 1. GİRİŞ EKRANI -->
     <div id="loginScreen" class="screen">
         <div class="login-card">
-            <h2 id="loginTitle" style="text-align: center; margin-bottom: 20px;">OPERATÖR GİRİŞİ</h2>
+            <h2 id="loginTitle" style="text-align: center; margin-bottom: 15px;">OPERATÖR GİRİŞİ</h2>
             <div class="form-group">
                 <label>Kullanıcı Adı:</label>
                 <input type="text" id="username" placeholder="Kullanıcı adınız">
@@ -345,6 +329,24 @@
     let currentUser = "";
     let clockInterval = null;
     let bildirimlerAcik = false;
+
+    // Tarih formatını GG.AA.YYYY SS:DD çeviren yardımcı fonksiyon
+    function formatTarihTr(tarihStr) {
+        if (!tarihStr) return '-';
+        try {
+            // YYYY-AA-GGTHH:MM formatını parçala
+            const parts = tarihStr.split('T');
+            if (parts.length === 2) {
+                const dateParts = parts[0].split('-');
+                if (dateParts.length === 3) {
+                    return `${dateParts[2]}.${dateParts[1]}.${dateParts[0]} ${parts[1]}`;
+                }
+            }
+            return tarihStr;
+        } catch(e) {
+            return tarihStr;
+        }
+    }
 
     supabaseClient
       .channel('public:cnc_is_emirleri')
@@ -735,30 +737,34 @@
                             }
                         }
 
+                        // Torna bitmiş ise sade kart ve detay tıklaması
                         if (d.torna_operasyonlar && d.torna_operasyonlar.length > 0 && d.tornaCompleted) {
                             let tarih = d.torna_baslangic_tarih || "";
                             tamamlananlar.push({
                                 tarih: tarih,
-                                html: `<div class="card" style="cursor:pointer;" onclick='detayGoster(${JSON.stringify(item)}, "torna")'>
-                                    <p style="font-size: 15px; font-weight: bold; color: #38bdf8;">${gostergeNo} <span style="color:#4ade80; font-size:12px;">[TORNA - BİTTİ]</span></p>
-                                    <p><strong>Operatör:</strong> ${d.torna_operator || '-'}</p>
-                                    <p><strong>Tezgah:</strong> ${d.torna_tezgah || '-'}</p>
+                                html: `<div class="card" style="cursor:pointer; display: flex; justify-content: space-between; align-items: center;" onclick='detayGoster(${JSON.stringify(item)}, "torna")'>
+                                    <div>
+                                        <p style="font-size: 15px; font-weight: bold; color: #38bdf8; margin-bottom: 2px;">${gostergeNo} (${d.torna_tezgah || '-'})</p>
+                                        <p style="margin: 0; color: #94a3b8; font-size: 12px;">Operatör: ${d.torna_operator || '-'}</p>
+                                        <p style="margin: 0; color: #94a3b8; font-size: 12px;">Üretim: ${item.hedef_adet || 0} / ${item.hedef_adet || 0} Adet</p>
+                                    </div>
                                     <span class="status-badge bg-green">Tamamlandı</span>
-                                    <p style="font-size:11px; color:#94a3b8; margin-top:5px; text-align:left;">Detaylar için dokun 🔍</p>
                                 </div>`
                             });
                         }
 
+                        // Dik işlem bitmiş ise sade kart ve detay tıklaması
                         if (d.dik_operasyonlar && d.dik_operasyonlar.length > 0 && d.dikCompleted) {
                             let tarih = d.dik_baslangic_tarih || "";
                             tamamlananlar.push({
                                 tarih: tarih,
-                                html: `<div class="card" style="cursor:pointer;" onclick='detayGoster(${JSON.stringify(item)}, "dik")'>
-                                    <p style="font-size: 15px; font-weight: bold; color: #38bdf8;">${gostergeNo} <span style="color:#4ade80; font-size:12px;">[DİK İŞLEM - BİTTİ]</span></p>
-                                    <p><strong>Operatör:</strong> ${d.dik_operator || '-'}</p>
-                                    <p><strong>Tezgah:</strong> ${d.dik_tezgah || '-'}</p>
+                                html: `<div class="card" style="cursor:pointer; display: flex; justify-content: space-between; align-items: center;" onclick='detayGoster(${JSON.stringify(item)}, "dik")'>
+                                    <div>
+                                        <p style="font-size: 15px; font-weight: bold; color: #38bdf8; margin-bottom: 2px;">${gostergeNo} (${d.dik_tezgah || '-'})</p>
+                                        <p style="margin: 0; color: #94a3b8; font-size: 12px;">Operatör: ${d.dik_operator || '-'}</p>
+                                        <p style="margin: 0; color: #94a3b8; font-size: 12px;">Üretim: ${item.hedef_adet || 0} / ${item.hedef_adet || 0} Adet</p>
+                                    </div>
                                     <span class="status-badge bg-green">Tamamlandı</span>
-                                    <p style="font-size:11px; color:#94a3b8; margin-top:5px; text-align:left;">Detaylar için dokun 🔍</p>
                                 </div>`
                             });
                         }
@@ -870,28 +876,30 @@
         } catch(e) { alert("Hata: " + e.message); }
     }
 
+    // Tarihleri GG.AA.YYYY formatına çevirerek detay gösterimi
     function detayGoster(item, bolumTipi) {
         let d = JSON.parse(item.durum || "{}");
-        let detayStr = `DETAY\n\n`;
+        let isemriNo = getIsEmriNumarasi(item, d);
+        let detayStr = `📋 İŞ EMRİ DETAYI: ${isemriNo}\n----------------------------------\n`;
         let durusAciklamalari = [];
         
         let opListesi = bolumTipi === "torna" ? d.torna_operasyonlar : d.dik_operasyonlar;
         if (opListesi && opListesi.length > 0) {
             opListesi.forEach(op => {
-                detayStr += `• ${op.opNo}. Operasyon\n`;
-                detayStr += `  Başlangıç: ${op.baslangic || '-'}\n`;
-                detayStr += `  Bitiş: ${op.bitis || '-'}\n\n`;
+                detayStr += `• ${op.opNo}. Operasyon (${op.durum})\n`;
+                detayStr += `  Başlangıç: ${formatTarihTr(op.baslangic)}\n`;
+                detayStr += `  Bitiş: ${formatTarihTr(op.bitis)}\n\n`;
                 
                 if(op.duruslar && op.duruslar.length > 0) {
                     op.duruslar.forEach(dur => {
-                        if(dur.aciklama) durusAciklamalari.push(dur.aciklama);
+                        if(dur.aciklama) durusAciklamalari.push(`[Duruş]: ${dur.aciklama} (${formatTarihTr(dur.baslangic)})`);
                     });
                 }
             });
         }
 
         if (durusAciklamalari.length > 0) {
-            detayStr += `DURUM\n`;
+            detayStr += `⚠️ DURUŞ GEÇMİŞİ\n`;
             detayStr += durusAciklamalari.join("\n");
         }
 
@@ -939,12 +947,13 @@
                                 html: `
                                 <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px;">
                                     <div onclick="silYoneticiKayit('${item.id}')" style="position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: #dc2626; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; z-index: 1;">Sil</div>
-                                    <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "torna")'>
-                                        <p style="font-size: 16px; font-weight: bold; margin-bottom: 4px; color: #38bdf8;">${isemriNo}</p>
-                                        <p><strong>Operatör:</strong> ${d.torna_operator || '-'}</p>
-                                        <p><strong>Tezgah:</strong> ${d.torna_tezgah || '-'}</p>
-                                        <span class="status-badge ${d.tornaCompleted ? 'bg-green' : 'bg-blue'}" style="margin-top:4px;">${d.tornaCompleted ? 'Tamamlandı' : 'Devam Ediyor'}</span>
-                                        <p style="font-size:10px; color:#94a3b8; margin-top:4px;">(Sola kaydırarak sil)</p>
+                                    <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "torna")'>
+                                        <div>
+                                            <p style="font-size: 15px; font-weight: bold; margin-bottom: 2px; color: #38bdf8;">${isemriNo} (${d.torna_tezgah || '-'})</p>
+                                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">Operatör: ${d.torna_operator || '-'}</p>
+                                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">Üretim: ${item.hedef_adet || 0} / ${item.hedef_adet || 0} Adet</p>
+                                        </div>
+                                        <span class="status-badge ${d.tornaCompleted ? 'bg-green' : 'bg-blue'}">${d.tornaCompleted ? 'Tamamlandı' : 'Devam Ediyor'}</span>
                                     </div>
                                 </div>`
                             });
@@ -955,12 +964,13 @@
                                 html: `
                                 <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px;">
                                     <div onclick="silYoneticiKayit('${item.id}')" style="position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: #dc2626; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; z-index: 1;">Sil</div>
-                                    <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "dik")'>
-                                        <p style="font-size: 16px; font-weight: bold; margin-bottom: 4px; color: #38bdf8;">${isemriNo}</p>
-                                        <p><strong>Operatör:</strong> ${d.dik_operator || '-'}</p>
-                                        <p><strong>Tezgah:</strong> ${d.dik_tezgah || '-'}</p>
-                                        <span class="status-badge ${d.dikCompleted ? 'bg-green' : 'bg-blue'}" style="margin-top:4px;">${d.dikCompleted ? 'Tamamlandı' : 'Devam Ediyor'}</span>
-                                        <p style="font-size:10px; color:#94a3b8; margin-top:4px;">(Sola kaydırarak sil)</p>
+                                    <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "dik")'>
+                                        <div>
+                                            <p style="font-size: 15px; font-weight: bold; margin-bottom: 2px; color: #38bdf8;">${isemriNo} (${d.dik_tezgah || '-'})</p>
+                                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">Operatör: ${d.dik_operator || '-'}</p>
+                                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">Üretim: ${item.hedef_adet || 0} / ${item.hedef_adet || 0} Adet</p>
+                                        </div>
+                                        <span class="status-badge ${d.dikCompleted ? 'bg-green' : 'bg-blue'}">${d.dikCompleted ? 'Tamamlandı' : 'Devam Ediyor'}</span>
                                     </div>
                                 </div>`
                             });
@@ -1020,7 +1030,7 @@
 
                     varMi = true;
                     let isemriKodu = getIsEmriNumarasi(item, d);
-                    listDiv.innerHTML += `<div class="card" style="cursor:pointer;" onclick='yoneticiPlanDetayGoster(${JSON.stringify(item)})'><p style="font-size: 16px; font-weight: bold; margin-bottom: 4px; color: #38bdf8;">${isemriKodu}</p><span class="status-badge bg-blue">${d.isStarted ? 'Devam Ediyor' : 'Planlandı'}</span><p style="font-size:11px; color:#94a3b8; margin-top:4px;">Detay için dokun 🔍</p></div>`;
+                    listDiv.innerHTML += `<div class="card" style="cursor:pointer;" onclick='yoneticiPlanDetayGoster(${JSON.stringify(item)})'><p style="font-size: 15px; font-weight: bold; margin-bottom: 4px; color: #38bdf8;">${isemriKodu}</p><span class="status-badge bg-blue">${d.isStarted ? 'Devam Ediyor' : 'Planlandı'}</span><p style="font-size:11px; color:#94a3b8; margin-top:4px;">Detay için dokun 🔍</p></div>`;
                 });
                 if(!varMi) listDiv.innerHTML = "<p style='color:#94a3b8;'>Aktif plan kaydı yok.</p>";
             }
