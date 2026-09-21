@@ -330,11 +330,9 @@
     let clockInterval = null;
     let bildirimlerAcik = false;
 
-    // Tarih formatını GG.AA.YYYY SS:DD çeviren yardımcı fonksiyon
     function formatTarihTr(tarihStr) {
         if (!tarihStr) return '-';
         try {
-            // YYYY-AA-GGTHH:MM formatını parçala
             const parts = tarihStr.split('T');
             if (parts.length === 2) {
                 const dateParts = parts[0].split('-');
@@ -694,6 +692,12 @@
 
                     let gostergeNo = getIsEmriNumarasi(item, d);
 
+                    // Operatörlerin sadece kendi işlerini görmesini sağlayan filtre
+                    let buIsBanaAit = (d.torna_operator === currentUser || d.dik_operator === currentUser || d.operator === currentUser);
+                    if (!buIsBanaAit) {
+                        return; 
+                    }
+
                     if (d.isStarted) {
                         let aktifBolum = d.torna_operator === currentUser && !d.tornaCompleted ? "torna" : (d.dik_operator === currentUser && !d.dikCompleted ? "dik" : null);
 
@@ -737,8 +741,7 @@
                             }
                         }
 
-                        // Torna bitmiş ise sade kart ve detay tıklaması
-                        if (d.torna_operasyonlar && d.torna_operasyonlar.length > 0 && d.tornaCompleted) {
+                        if (d.torna_operasyonlar && d.torna_operasyonlar.length > 0 && d.tornaCompleted && d.torna_operator === currentUser) {
                             let tarih = d.torna_baslangic_tarih || "";
                             tamamlananlar.push({
                                 tarih: tarih,
@@ -753,8 +756,7 @@
                             });
                         }
 
-                        // Dik işlem bitmiş ise sade kart ve detay tıklaması
-                        if (d.dik_operasyonlar && d.dik_operasyonlar.length > 0 && d.dikCompleted) {
+                        if (d.dik_operasyonlar && d.dik_operasyonlar.length > 0 && d.dikCompleted && d.dik_operator === currentUser) {
                             let tarih = d.dik_baslangic_tarih || "";
                             tamamlananlar.push({
                                 tarih: tarih,
@@ -876,7 +878,6 @@
         } catch(e) { alert("Hata: " + e.message); }
     }
 
-    // Tarihleri GG.AA.YYYY formatına çevirerek detay gösterimi
     function detayGoster(item, bolumTipi) {
         let d = JSON.parse(item.durum || "{}");
         let isemriNo = getIsEmriNumarasi(item, d);
