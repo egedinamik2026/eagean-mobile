@@ -78,21 +78,19 @@ class CNCPlanningApp:
         self.setup_ui()
         self.load_data_from_file()
         
-        # GitHub üzerinden otomatik güncelleme kontrolü
         self.guncelleme_kontrol_et()
-
         self.root.after(500, self.cloud_veri_senkronizasyon_dongusu)
 
     def guncelleme_kontrol_et(self):
         try:
-            # GitHub'daki version.json dosyanızın ham (raw) bağlantı adresi
-            url = "https://raw.githubusercontent.com/eageanimik2026/eagean-mobile/main/version.json"
+            # Doğru kullanıcı adı (egedinamik2026) ile güncellendi[cite: 2]
+            url = "https://raw.githubusercontent.com/egedinamik2026/eagean-mobile/main/version.json"
             
             req = urllib.request.urlopen(url, timeout=3)
             data = json.loads(req.read().decode('utf-8'))
             bulut_versiyon = data.get("version", "1.0")
             
-            yerel_versiyon = "1.0" # Şu anki yerel sürümünüz
+            yerel_versiyon = "1.0" 
             
             if bulut_versiyon != yerel_versiyon:
                 cevap = messagebox.askyesno(
@@ -1587,7 +1585,7 @@ class CNCPlanningApp:
         self.tab_bitmis_isler.columnconfigure(0, weight=1)
         self.tab_bitmis_isler.rowconfigure(0, weight=1)
 
-        frame_list = ttk.LabelFrame(self.tab_bitmis_isler, text=" 🏁 Biten ve Plan Kontrolden Silinen İşler (Detay için çift tıklayın) ", style="Grey.TLabelframe")
+        frame_list = ttk.LabelFrame(self.tab_bitmis_isler, text=" 🏁 Biten ve Plan Kontrolden Silinen İşler (Detay için çift tıklayın, silmek için sağ tıklayın) ", style="Grey.TLabelframe")
         frame_list.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
         frame_list.columnconfigure(0, weight=1)
         frame_list.rowconfigure(0, weight=1)
@@ -1603,7 +1601,44 @@ class CNCPlanningApp:
         self.tree_bitmis.configure(yscroll=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
 
+        self.context_menu_bitmis = tk.Menu(self.root, tearoff=0)
+        self.context_menu_bitmis.add_command(label="🗑️ Bu Bitmiş İşi Tamamen Sil", command=self.delete_selected_bitmis_job)
+
         self.tree_bitmis.bind("<Double-1>", self.bitmis_is_detay_goster)
+        self.tree_bitmis.bind("<Button-3>", self.show_bitmis_context_menu)
+
+    def show_bitmis_context_menu(self, event):
+        item = self.tree_bitmis.identify_row(event.y)
+        if item:
+            self.tree_bitmis.selection_set(item)
+            self.context_menu_bitmis.post(event.x_root, event.y_root)
+
+    def delete_selected_bitmis_job(self):
+        selected = self.tree_bitmis.selection()
+        if not selected: return
+        
+        item_values = self.tree_bitmis.item(selected[0], "values")
+        isemri_no = item_values[0]
+        material_code = item_values[1]
+
+        confirm = messagebox.askyesno("Silme Onayı", f"'{isemri_no}' numaralı bitmiş iş emrini sistemden tamamen silmek istediğinize emin misiniz?")
+        if confirm:
+            target_uid = None
+            for j in self.jobs:
+                if str(j.get("isemri")) == str(isemri_no) and str(j.get("material")) == str(material_code):
+                    target_uid = j.get("unique_id")
+                    break
+
+            if supabase and target_uid:
+                try:
+                    supabase.table("cnc_is_emirleri").delete().eq("unique_id", target_uid).execute()
+                except Exception as e:
+                    print("Supabase bitmiş iş silme hatası:", e)
+
+            self.jobs = [j for j in self.jobs if not (str(j.get("isemri")) == str(isemri_no) and str(j.get("material")) == str(material_code))]
+            
+            self.refresh_all_views()
+            self.save_data_to_file()
 
     def refresh_bitmis_isler_tab(self):
         if not hasattr(self, "tree_bitmis"): return
