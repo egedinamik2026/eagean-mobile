@@ -74,6 +74,10 @@ class CNCPlanningApp:
 
         self.days_count = 90
         self.overtime_schedule = {}  
+        
+        # Sürüm ve güncelleme takibi için değişkenler
+        self.yerel_versiyon = "1.0"
+        self.ignored_version = ""
 
         self.setup_ui()
         self.load_data_from_file()
@@ -83,22 +87,43 @@ class CNCPlanningApp:
 
     def guncelleme_kontrol_et(self):
         try:
-            # Doğru kullanıcı adı (egedinamik2026) ile güncellendi[cite: 2]
             url = "https://raw.githubusercontent.com/egedinamik2026/eagean-mobile/main/version.json"
-            
             req = urllib.request.urlopen(url, timeout=3)
             data = json.loads(req.read().decode('utf-8'))
             bulut_versiyon = data.get("version", "1.0")
+            exe_download_url = data.get("exe_url", "")
             
-            yerel_versiyon = "1.0" 
-            
-            if bulut_versiyon != yerel_versiyon:
+            # Eğer buluttaki sürüm yerel sürümden farklıysa VE kullanıcı bu sürümü daha önce reddetmediyse sor
+            if bulut_versiyon != self.yerel_versiyon and bulut_versiyon != self.ignored_version:
                 cevap = messagebox.askyesno(
                     "Güncelleme Var!", 
-                    f"Yeni bir sürüm tespit edildi (v{bulut_versiyon}). Güncellemeyi kontrol etmek ister misiniz?"
+                    f"Yeni bir sürüm tespit edildi (v{bulut_versiyon}). Güncellemeyi şimdi indirip kurmak ister misiniz?"
                 )
-                if cevap:
-                    messagebox.showinfo("Bilgi", "Güncelleme onaylandı.")
+                if cevap and exe_download_url:
+                    try:
+                        messagebox.showinfo("Bilgi", "Güncelleme indiriliyor, lütfen bekleyin...")
+                        yeni_dosya_adi = "main_yeni.exe"
+                        urllib.request.urlretrieve(exe_download_url, yeni_dosya_adi)
+                        
+                        batch_icerik = f"""
+                        @echo off
+                        timeout /t 2 /nobreak > nul
+                        del /f /q "main.exe"
+                        rename "{yeni_dosya_adi}" "main.exe"
+                        start "" "main.exe"
+                        del "%~f0"
+                        """
+                        with open("update.bat", "w", encoding="utf-8") as b_file:
+                            b_file.write(batch_icerik)
+                            
+                        os.startfile("update.bat")
+                        sys.exit()
+                    except Exception as err:
+                        messagebox.showerror("Hata", f"Güncelleme indirilemedi: {err}")
+                else:
+                    # Kullanıcı Hayır derse, bu sürümü bu cihaz için yoksay
+                    self.ignored_version = bulut_versiyon
+                    self.save_data_to_file()
         except Exception as e:
             print("Sürüm kontrol edilemedi:", e)
 
@@ -255,6 +280,9 @@ class CNCPlanningApp:
                     data = json.load(f)
                     self.jobs = data.get("jobs", [])
                     
+                    self.yerel_versiyon = data.get("yerel_versiyon", "1.0")
+                    self.ignored_version = data.get("ignored_version", "")
+                    
                     for j in self.jobs:
                         if not j.get("unique_id"):
                             j["unique_id"] = str(uuid.uuid4())
@@ -299,6 +327,8 @@ class CNCPlanningApp:
                 "machines_list": self.machines_list,
                 "part_library": self.part_library,
                 "overtime_schedule": self.overtime_schedule,
+                "yerel_versiyon": self.yerel_versiyon,
+                "ignored_version": self.ignored_version,
                 "settings": {
                     "work_min_weekday": self.work_min_weekday,
                     "overtime_min_weekday": self.overtime_min_weekday,
