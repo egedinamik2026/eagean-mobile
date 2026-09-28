@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>EAGEAN DYNAMICS - CNC Atölye Mobil Terminali</title>
+    <title>EAGEAN DYNAMICS - CNC Atölye Mobil Terminali v1.1</title>
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="icon" type="image/png" href="logo.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -173,13 +173,13 @@
 
     <div id="splashScreen">
         <img src="logo.png" alt="Logo">
-        <h1>EAGEAN DYNAMICS</h1>
+        <h1>EAGEAN DYNAMICS v1.1</h1>
     </div>
 
 <div class="container">
     <div class="brand-header">
         <img src="logo.png" alt="Logo">
-        <h1>EAGEAN DYNAMICS</h1>
+        <h1>EAGEAN DYNAMICS v1.1</h1>
     </div>
 
     <div id="loginMenuIcon" class="menu-icon" onclick="toggleMenu('loginDropdown')">⋮</div>
@@ -693,7 +693,8 @@
                 makinaDiv.innerHTML = "";
                 takipDiv.innerHTML = "";
 
-                let aktifVar = false;
+                let aktifTornaVar = false;
+                let aktifDikVar = false;
                 let tamamlananlar = [];
 
                 data.forEach(item => {
@@ -702,83 +703,110 @@
 
                     let gostergeNo = getIsEmriNumarasi(item, d);
 
-                    let buIsBanaAit = (d.torna_operator === currentUser || d.dik_operator === currentUser || d.operator === currentUser);
-                    if (!buIsBanaAit) {
-                        return; 
+                    // 1. TORNA İŞİ KONTROLÜ (Ayrı Kart Olarak Gösterim)
+                    let tornaBanaAit = (d.torna_operator === currentUser);
+                    if (tornaBanaAit && d.tornaStarted && !d.tornaCompleted) {
+                        aktifTornaVar = true;
+                        let tezgahAdi = d.torna_tezgah;
+                        let opListesi = d.torna_operasyonlar;
+                        let opIdx = d.torna_aktifOpIndex;
+                        let aktifOp = opListesi ? opListesi[opIdx] : null;
+                        let aktifOpBaslik = aktifOp ? `${aktifOp.opNo}. Operasyon` : "";
+                        let aktifOpDurum = aktifOp ? aktifOp.durum : "";
+
+                        let aksiyonButonlari = "";
+                        if(aktifOp && aktifOp.durum === "İşleniyor") {
+                            aksiyonButonlari = `
+                                <div class="btn-row">
+                                    <button class="bg-red" style="flex:1;" onclick="durusVerModal('${item.id}', 'torna', ${opIdx})">⚠️ Duruş</button>
+                                    <button class="bg-green" style="flex:2;" onclick="operasyonBitir('${item.id}', 'torna')">✅ ${opIdx+1}.Op Bitir</button>
+                                </div>
+                            `;
+                        } else if(aktifOp && aktifOp.durum === "Duruşta") {
+                            aksiyonButonlari = `
+                                <div class="btn-row">
+                                    <button class="bg-orange" style="flex:1;" onclick="durusBitirModal('${item.id}', 'torna', ${opIdx})">▶️ Devam Et</button>
+                                    <button class="bg-green" style="flex:2;" onclick="operasyonBitir('${item.id}', 'torna')">✅ ${opIdx+1}.Op Bitir</button>
+                                </div>
+                            `;
+                        }
+
+                        makinaDiv.innerHTML += `<div class="card" style="border-left: 4px solid #38bdf8;">
+                            <p style="font-size: 15px; font-weight: bold; color: #38bdf8;">${gostergeNo} - [TORNA]</p>
+                            <p><strong>Operatör:</strong> ${d.torna_operator || '-'}</p>
+                            <p><strong>Tezgah:</strong> ${tezgahAdi}</p>
+                            <p><strong>Aktif Adım:</strong> ${aktifOpBaslik} (<span style="color:${aktifOpDurum==='Duruşta'?'#fb923c':'#38bdf8'}">${aktifOpDurum}</span>)</p>
+                            <p><strong>Adet:</strong> ${item.hedef_adet}</p>
+                            ${aksiyonButonlari}
+                        </div>`;
                     }
 
-                    if (d.isStarted) {
-                        let aktifBolum = d.torna_operator === currentUser && !d.tornaCompleted ? "torna" : (d.dik_operator === currentUser && !d.dikCompleted ? "dik" : null);
+                    // 2. DİK İŞLEM İŞİ KONTROLÜ (Ayrı Kart Olarak Gösterim)
+                    let dikBanaAit = (d.dik_operator === currentUser);
+                    if (dikBanaAit && d.dikStarted && !d.dikCompleted) {
+                        aktifDikVar = true;
+                        let tezgahAdi = d.dik_tezgah;
+                        let opListesi = d.dik_operasyonlar;
+                        let opIdx = d.dik_aktifOpIndex;
+                        let aktifOp = opListesi ? opListesi[opIdx] : null;
+                        let aktifOpBaslik = aktifOp ? `${aktifOp.opNo}. Operasyon` : "";
+                        let aktifOpDurum = aktifOp ? aktifOp.durum : "";
 
-                        if (aktifBolum) {
-                            let islemBittiMi = (aktifBolum === "torna" ? d.tornaCompleted : d.dikCompleted);
-                            
-                            if (!islemBittiMi) {
-                                aktifVar = true;
-                                let tezgahAdi = aktifBolum === "torna" ? d.torna_tezgah : d.dik_tezgah;
-                                let opListesi = aktifBolum === "torna" ? d.torna_operasyonlar : d.dik_operasyonlar;
-                                let opIdx = aktifBolum === "torna" ? d.torna_aktifOpIndex : d.dik_aktifOpIndex;
-                                let aktifOp = opListesi ? opListesi[opIdx] : null;
-                                let aktifOpBaslik = aktifOp ? `${aktifOp.opNo}. Operasyon` : "";
-                                let aktifOpDurum = aktifOp ? aktifOp.durum : "";
-
-                                let aksiyonButonlari = "";
-                                if(aktifOp && aktifOp.durum === "İşleniyor") {
-                                    aksiyonButonlari = `
-                                        <div class="btn-row">
-                                            <button class="bg-red" style="flex:1;" onclick="durusVerModal('${item.id}', '${aktifBolum}', ${opIdx})">⚠️ Duruş</button>
-                                            <button class="bg-green" style="flex:2;" onclick="operasyonBitir('${item.id}', '${aktifBolum}')">✅ ${opIdx+1}.Op Bitir</button>
-                                        </div>
-                                    `;
-                                } else if(aktifOp && aktifOp.durum === "Duruşta") {
-                                    aksiyonButonlari = `
-                                        <div class="btn-row">
-                                            <button class="bg-orange" style="flex:1;" onclick="durusBitirModal('${item.id}', '${aktifBolum}', ${opIdx})">▶️ Devam Et</button>
-                                            <button class="bg-green" style="flex:2;" onclick="operasyonBitir('${item.id}', '${aktifBolum}')">✅ ${opIdx+1}.Op Bitir</button>
-                                        </div>
-                                    `;
-                                }
-
-                                makinaDiv.innerHTML += `<div class="card">
-                                    <p style="font-size: 15px; font-weight: bold; color: #38bdf8;">${gostergeNo}</p>
-                                    <p><strong>Operatör:</strong> ${aktifBolum === "torna" ? (d.torna_operator || '-') : (d.dik_operator || '-')}</p>
-                                    <p><strong>Tezgah:</strong> ${tezgahAdi}</p>
-                                    <p><strong>Aktif Adım:</strong> ${aktifOpBaslik} (<span style="color:${aktifOpDurum==='Duruşta'?'#fb923c':'#38bdf8'}">${aktifOpDurum}</span>)</p>
-                                    <p><strong>Adet:</strong> ${item.hedef_adet}</p>
-                                    ${aksiyonButonlari}
-                                </div>`;
-                            }
+                        let aksiyonButonlari = "";
+                        if(aktifOp && aktifOp.durum === "İşleniyor") {
+                            aksiyonButonlari = `
+                                <div class="btn-row">
+                                    <button class="bg-red" style="flex:1;" onclick="durusVerModal('${item.id}', 'dik', ${opIdx})">⚠️ Duruş</button>
+                                    <button class="bg-green" style="flex:2;" onclick="operasyonBitir('${item.id}', 'dik')">✅ ${opIdx+1}.Op Bitir</button>
+                                </div>
+                            `;
+                        } else if(aktifOp && aktifOp.durum === "Duruşta") {
+                            aksiyonButonlari = `
+                                <div class="btn-row">
+                                    <button class="bg-orange" style="flex:1;" onclick="durusBitirModal('${item.id}', 'dik', ${opIdx})">▶️ Devam Et</button>
+                                    <button class="bg-green" style="flex:2;" onclick="operasyonBitir('${item.id}', 'dik')">✅ ${opIdx+1}.Op Bitir</button>
+                                </div>
+                            `;
                         }
 
-                        if (d.torna_operasyonlar && d.torna_operasyonlar.length > 0 && d.tornaCompleted && d.torna_operator === currentUser) {
-                            let tarih = d.torna_baslangic_tarih || "";
-                            tamamlananlar.push({
-                                tarih: tarih,
-                                html: `<div class="card" style="cursor:pointer; display: flex; justify-content: space-between; align-items: center;" onclick='detayGoster(${JSON.stringify(item)}, "torna")'>
-                                    <div>
-                                        <p style="font-size: 15px; font-weight: bold; color: #38bdf8; margin-bottom: 2px;">${gostergeNo} (${d.torna_tezgah || '-'})</p>
-                                        <p style="margin: 0; color: #94a3b8; font-size: 12px;">Operatör: ${d.torna_operator || '-'}</p>
-                                        <p style="margin: 0; color: #94a3b8; font-size: 12px;">Üretim: ${item.hedef_adet || 0} / ${item.hedef_adet || 0} Adet</p>
-                                    </div>
-                                    <span class="status-badge bg-green">Tamamlandı</span>
-                                </div>`
-                            });
-                        }
+                        makinaDiv.innerHTML += `<div class="card" style="border-left: 4px solid #a855f7;">
+                            <p style="font-size: 15px; font-weight: bold; color: #a855f7;">${gostergeNo} - [DİK İŞLEM]</p>
+                            <p><strong>Operatör:</strong> ${d.dik_operator || '-'}</p>
+                            <p><strong>Tezgah:</strong> ${tezgahAdi}</p>
+                            <p><strong>Aktif Adım:</strong> ${aktifOpBaslik} (<span style="color:${aktifOpDurum==='Duruşta'?'#fb923c':'#38bdf8'}">${aktifOpDurum}</span>)</p>
+                            <p><strong>Adet:</strong> ${item.hedef_adet}</p>
+                            ${aksiyonButonlari}
+                        </div>`;
+                    }
 
-                        if (d.dik_operasyonlar && d.dik_operasyonlar.length > 0 && d.dikCompleted && d.dik_operator === currentUser) {
-                            let tarih = d.dik_baslangic_tarih || "";
-                            tamamlananlar.push({
-                                tarih: tarih,
-                                html: `<div class="card" style="cursor:pointer; display: flex; justify-content: space-between; align-items: center;" onclick='detayGoster(${JSON.stringify(item)}, "dik")'>
-                                    <div>
-                                        <p style="font-size: 15px; font-weight: bold; color: #38bdf8; margin-bottom: 2px;">${gostergeNo} (${d.dik_tezgah || '-'})</p>
-                                        <p style="margin: 0; color: #94a3b8; font-size: 12px;">Operatör: ${d.dik_operator || '-'}</p>
-                                        <p style="margin: 0; color: #94a3b8; font-size: 12px;">Üretim: ${item.hedef_adet || 0} / ${item.hedef_adet || 0} Adet</p>
-                                    </div>
-                                    <span class="status-badge bg-green">Tamamlandı</span>
-                                </div>`
-                            });
-                        }
+                    // Tamamlanan Torna Geçmişi
+                    if (d.torna_operasyonlar && d.torna_operasyonlar.length > 0 && d.tornaCompleted && d.torna_operator === currentUser) {
+                        tamamlananlar.push({
+                            tarih: d.torna_baslangic_tarih || "",
+                            html: `<div class="card" style="cursor:pointer; display: flex; justify-content: space-between; align-items: center;" onclick='detayGoster(${JSON.stringify(item)}, "torna")'>
+                                <div>
+                                    <p style="font-size: 15px; font-weight: bold; color: #38bdf8; margin-bottom: 2px;">${gostergeNo} - [TORNA] (${d.torna_tezgah || '-'})</p>
+                                    <p style="margin: 0; color: #94a3b8; font-size: 12px;">Operatör: ${d.torna_operator || '-'}</p>
+                                    <p style="margin: 0; color: #94a3b8; font-size: 12px;">Üretim: ${item.hedef_adet || 0} Adet</p>
+                                </div>
+                                <span class="status-badge bg-green">Tamamlandı</span>
+                            </div>`
+                        });
+                    }
+
+                    // Tamamlanan Dik İşlem Geçmişi
+                    if (d.dik_operasyonlar && d.dik_operasyonlar.length > 0 && d.dikCompleted && d.dik_operator === currentUser) {
+                        tamamlananlar.push({
+                            tarih: d.dik_baslangic_tarih || "",
+                            html: `<div class="card" style="cursor:pointer; display: flex; justify-content: space-between; align-items: center;" onclick='detayGoster(${JSON.stringify(item)}, "dik")'>
+                                <div>
+                                    <p style="font-size: 15px; font-weight: bold; color: #a855f7; margin-bottom: 2px;">${gostergeNo} - [DİK İŞLEM] (${d.dik_tezgah || '-'})</p>
+                                    <p style="margin: 0; color: #94a3b8; font-size: 12px;">Operatör: ${d.dik_operator || '-'}</p>
+                                    <p style="margin: 0; color: #94a3b8; font-size: 12px;">Üretim: ${item.hedef_adet || 0} Adet</p>
+                                </div>
+                                <span class="status-badge bg-green">Tamamlandı</span>
+                            </div>`
+                        });
                     }
                 });
 
@@ -790,7 +818,9 @@
                     takipDiv.innerHTML = "<p style='text-align:left; color:#94a3b8;'>Tamamlanan kayıt bulunmuyor.</p>";
                 }
 
-                if(!aktifVar) makinaDiv.innerHTML = "<p style='text-align:left; color:#94a3b8;'>Aktif işiniz bulunmuyor.</p>";
+                if(!aktifTornaVar && !aktifDikVar) {
+                    makinaDiv.innerHTML = "<p style='text-align:left; color:#94a3b8;'>Aktif işiniz bulunmuyor.</p>";
+                }
             }
         } catch(e) {
             makinaDiv.innerHTML = "Veriler yüklenemedi.";
@@ -890,7 +920,7 @@
     function detayGoster(item, bolumTipi) {
         let d = JSON.parse(item.durum || "{}");
         let isemriNo = getIsEmriNumarasi(item, d);
-        let detayStr = `📋 İŞ EMRİ DETAYI: ${isemriNo}\n----------------------------------\n`;
+        let detayStr = `📋 İŞ EMRİ DETAYI: ${isemriNo} (${bolumTipi.toUpperCase()})\n----------------------------------\n`;
         let durusAciklamalari = [];
         
         let opListesi = bolumTipi === "torna" ? d.torna_operasyonlar : d.dik_operasyonlar;
@@ -964,11 +994,11 @@
                                 html: `
                                 <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px;">
                                     <div onclick="silYoneticiKayit('${item.id}')" style="position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: #dc2626; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; z-index: 1;">Sil</div>
-                                    <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "torna")'>
+                                    <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #38bdf8;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "torna")'>
                                         <div>
-                                            <p style="font-size: 15px; font-weight: bold; margin-bottom: 2px; color: #38bdf8;">${isemriNo} (${d.torna_tezgah || '-'})</p>
+                                            <p style="font-size: 15px; font-weight: bold; margin-bottom: 2px; color: #38bdf8;">${isemriNo} - [TORNA] (${d.torna_tezgah || '-'})</p>
                                             <p style="margin: 0; color: #94a3b8; font-size: 12px;">Operatör: ${d.torna_operator || '-'}</p>
-                                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">Üretim: ${item.hedef_adet || 0} / ${item.hedef_adet || 0} Adet</p>
+                                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">Üretim: ${item.hedef_adet || 0} Adet</p>
                                         </div>
                                         <span class="status-badge ${d.tornaCompleted ? 'bg-green' : 'bg-blue'}">${d.tornaCompleted ? 'Tamamlandı' : 'Devam Ediyor'}</span>
                                     </div>
@@ -981,11 +1011,11 @@
                                 html: `
                                 <div style="position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 8px;">
                                     <div onclick="silYoneticiKayit('${item.id}')" style="position: absolute; right: 0; top: 0; bottom: 0; width: 80px; background: #dc2626; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; z-index: 1;">Sil</div>
-                                    <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "dik")'>
+                                    <div class="card" style="position: relative; z-index: 2; transition: transform 0.2s ease; margin-bottom: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #a855f7;" ontouchstart="ts(event)" ontouchend="te(event, this)" onclick='detayGoster(${JSON.stringify(item)}, "dik")'>
                                         <div>
-                                            <p style="font-size: 15px; font-weight: bold; margin-bottom: 2px; color: #38bdf8;">${isemriNo} (${d.dik_tezgah || '-'})</p>
+                                            <p style="font-size: 15px; font-weight: bold; margin-bottom: 2px; color: #a855f7;">${isemriNo} - [DİK İŞLEM] (${d.dik_tezgah || '-'})</p>
                                             <p style="margin: 0; color: #94a3b8; font-size: 12px;">Operatör: ${d.dik_operator || '-'}</p>
-                                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">Üretim: ${item.hedef_adet || 0} / ${item.hedef_adet || 0} Adet</p>
+                                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">Üretim: ${item.hedef_adet || 0} Adet</p>
                                         </div>
                                         <span class="status-badge ${d.dikCompleted ? 'bg-green' : 'bg-blue'}">${d.dikCompleted ? 'Tamamlandı' : 'Devam Ediyor'}</span>
                                     </div>
@@ -1018,11 +1048,11 @@
                         varMi = true;
                         if (d.torna_tezgah && !d.tornaCompleted) {
                             let aktifOp = d.torna_operasyonlar ? d.torna_operasyonlar[d.torna_aktifOpIndex] : null;
-                            listDiv.innerHTML += `<div class="card"><p style="font-size: 15px; font-weight: bold; color: #38bdf8;">${gostergeNo}</p><p><strong>Operatör:</strong> ${d.torna_operator || '-'}</p><p><strong>Tezgah:</strong> ${d.torna_tezgah}</p><p><strong>Op:</strong> ${aktifOp ? aktifOp.opNo+'. Op ('+aktifOp.durum+')' : '-'}</p></div>`;
+                            listDiv.innerHTML += `<div class="card" style="border-left: 4px solid #38bdf8;"><p style="font-size: 15px; font-weight: bold; color: #38bdf8;">${gostergeNo} - [TORNA]</p><p><strong>Operatör:</strong> ${d.torna_operator || '-'}</p><p><strong>Tezgah:</strong> ${d.torna_tezgah}</p><p><strong>Op:</strong> ${aktifOp ? aktifOp.opNo+'. Op ('+aktifOp.durum+')' : '-'}</p></div>`;
                         }
                         if (d.dik_tezgah && !d.dikCompleted) {
                             let aktifOp = d.dik_operasyonlar ? d.dik_operasyonlar[d.dik_aktifOpIndex] : null;
-                            listDiv.innerHTML += `<div class="card"><p style="font-size: 15px; font-weight: bold; color: #38bdf8;">${gostergeNo}</p><p><strong>Operatör:</strong> ${d.dik_operator || '-'}</p><p><strong>Tezgah:</strong> ${d.dik_tezgah}</p><p><strong>Op:</strong> ${aktifOp ? aktifOp.opNo+'. Op ('+aktifOp.durum+')' : '-'}</p></div>`;
+                            listDiv.innerHTML += `<div class="card" style="border-left: 4px solid #a855f7;"><p style="font-size: 15px; font-weight: bold; color: #a855f7;">${gostergeNo} - [DİK İŞLEM]</p><p><strong>Operatör:</strong> ${d.dik_operator || '-'}</p><p><strong>Tezgah:</strong> ${d.dik_tezgah}</p><p><strong>Op:</strong> ${aktifOp ? aktifOp.opNo+'. Op ('+aktifOp.durum+')' : '-'}</p></div>`;
                         }
                     }
                 });
