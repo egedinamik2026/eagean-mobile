@@ -75,7 +75,7 @@ class CNCPlanningApp:
         self.days_count = 90
         self.overtime_schedule = {}  
         
-        self.yerel_versiyon = "1.3"
+        self.yerel_versiyon = "1.0"
         self.ignored_version = ""
 
         self.otomatik_guncelleme_kontrolet()
@@ -101,7 +101,7 @@ class CNCPlanningApp:
                     script_req = urllib.request.urlopen(url_script, timeout=5)
                     yeni_kod = script_req.read().decode("utf-8")
                     
-                    dosya_adi = sys.argv[0] if sys.argv[0].endswith(".py") else "main_2.py"
+                    dosya_adi = "main.py"
                     with open(dosya_adi, "w", encoding="utf-8") as f:
                         f.write(yeni_kod)
                         
@@ -295,7 +295,7 @@ class CNCPlanningApp:
                     data = json.load(f)
                     self.jobs = data.get("jobs", [])
                     
-                    self.yerel_versiyon = data.get("yerel_versiyon", "1.3")
+                    self.yerel_versiyon = data.get("yerel_versiyon", "1.0")
                     self.ignored_version = data.get("ignored_version", "")
                     
                     for j in self.jobs:
@@ -1544,7 +1544,7 @@ class CNCPlanningApp:
         frame_top = ttk.Frame(self.tab_mesai, style="Grey.TLabelframe")
         frame_top.grid(row=0, column=0, sticky="ew", padx=10, pady=10)
 
-        lbl = ttk.Label(frame_top, text="📅 Torna dan Dik İşlem Ayrı Günlük Mesai ve Tatil Yönetimi", font=("Segoe UI", 12, "bold"), style="Grey.TLabel")
+        lbl = ttk.Label(frame_top, text="📅 Torna ve Dik İşlem Ayrı Günlük Mesai ve Tatil Yönetimi", font=("Segoe UI", 12, "bold"), style="Grey.TLabel")
         lbl.pack(side=tk.LEFT, padx=10, pady=10)
 
         frame_list = ttk.LabelFrame(self.tab_mesai, text=" Gelecek Mesai ve Tatil Takvimi (Değiştirmek için üzerine tıklayın) ", style="Grey.TLabelframe")
