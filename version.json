@@ -1,5 +1,4 @@
 {
-  "version": "1.1",
-  "not": "Yeni operasyon güncellemeleri",
-  "exe_url": "https://raw.githubusercontent.com/egedinamik2026/eagean-mobile/main/dist/main.exe"
+  "version": "1.0",
+  "exe_url": "https://raw.githubusercontent.com/egedinamik2026/eagean-mobile/main/main.exe"
 }
