@@ -346,6 +346,16 @@
         }
     }
 
+    function formatSure(dakika) {
+        if (!dakika || isNaN(dakika)) return "0 dk";
+        let sa = Math.floor(dakika / 60);
+        let dk = Math.round(dakika % 60);
+        if (sa > 0) {
+            return `${sa} saat ${dk} dk`;
+        }
+        return `${dk} dk`;
+    }
+
     supabaseClient
       .channel('public:cnc_is_emirleri')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cnc_is_emirleri' }, payload => {
@@ -692,7 +702,6 @@
 
                     let gostergeNo = getIsEmriNumarasi(item, d);
 
-                    // Operatörlerin sadece kendi işlerini görmesini sağlayan filtre
                     let buIsBanaAit = (d.torna_operator === currentUser || d.dik_operator === currentUser || d.operator === currentUser);
                     if (!buIsBanaAit) {
                         return; 
@@ -893,15 +902,22 @@
                 
                 if(op.duruslar && op.duruslar.length > 0) {
                     op.duruslar.forEach(dur => {
-                        if(dur.aciklama) durusAciklamalari.push(`[Duruş]: ${dur.aciklama} (${formatTarihTr(dur.baslangic)})`);
+                        let durusSuresiStr = "Devam ediyor...";
+                        if (dur.baslangic && dur.bitis) {
+                            let bZaman = new Date(dur.baslangic);
+                            let fZaman = new Date(dur.bitis);
+                            let farkDakika = Math.round((fZaman - bZaman) / 60000);
+                            durusSuresiStr = formatSure(farkDakika);
+                        }
+                        durusAciklamalari.push(`[Duruş]: ${dur.aciklama}\n  🕒 Saat: ${formatTarihTr(dur.baslangic)} - ${formatTarihTr(dur.bitis)}\n  ⏱️ Süre: ${durusSuresiStr}`);
                     });
                 }
             });
         }
 
         if (durusAciklamalari.length > 0) {
-            detayStr += `⚠️ DURUŞ GEÇMİŞİ\n`;
-            detayStr += durusAciklamalari.join("\n");
+            detayStr += `⚠️ DURUŞ GEÇMİŞİ VE SÜRELERİ\n`;
+            detayStr += durusAciklamalari.join("\n\n");
         }
 
         alert(detayStr);
