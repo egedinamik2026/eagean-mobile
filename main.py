@@ -75,8 +75,8 @@ class CNCPlanningApp:
         self.days_count = 90
         self.overtime_schedule = {}  
         
-        # Sürüm ve güncelleme takibi (v1.1)
-        self.yerel_versiyon = "1.1"
+        # Sürüm ve güncelleme takibi için değişkenler
+        self.yerel_versiyon = "1.0"
         self.ignored_version = ""
 
         self.setup_ui()
@@ -90,9 +90,10 @@ class CNCPlanningApp:
             url = "https://raw.githubusercontent.com/egedinamik2026/eagean-mobile/main/version.json"
             req = urllib.request.urlopen(url, timeout=3)
             data = json.loads(req.read().decode('utf-8'))
-            bulut_versiyon = data.get("version", "1.1")
+            bulut_versiyon = data.get("version", "1.0")
             exe_download_url = data.get("exe_url", "")
             
+            # Eğer buluttaki sürüm yerel sürümden farklıysa VE kullanıcı bu sürümü daha önce reddetmediyse sor
             if bulut_versiyon != self.yerel_versiyon and bulut_versiyon != self.ignored_version:
                 cevap = messagebox.askyesno(
                     "Güncelleme Var!", 
@@ -120,107 +121,171 @@ class CNCPlanningApp:
                     except Exception as err:
                         messagebox.showerror("Hata", f"Güncelleme indirilemedi: {err}")
                 else:
+                    # Kullanıcı Hayır derse, bu sürümü bu cihaz için yoksay
                     self.ignored_version = bulut_versiyon
                     self.save_data_to_file()
         except Exception as e:
             print("Sürüm kontrol edilemedi:", e)
 
     def cloud_veri_senkronizasyon_dongusu(self):
+        """Supabase'deki iş emirlerini masaüstündeki yerel listeyle senkronize eder.
+
+        Önemli: Mobil uygulamada tamamlanan işler de Supabase'de tutulduğu için
+        yalnızca aktif (isStarted=True, isCompleted=False) kayıtları almak yerine
+        tüm kayıtlar okunur. Böylece mobilde biten ancak masaüstünde hiç bulunmayan
+        işler de Biten İşler sekmesine düşer.
+        """
         try:
             if supabase:
                 res = supabase.table("cnc_is_emirleri").select("*").execute()
                 if res.data is not None:
                     cloud_orders = res.data
                     updated = False
-                    
-                    existing_isemris = [str(j.get("isemri", "")).strip() for j in self.jobs]
-                    
+
+                    # Önce benzersiz kimlikleri, sonra iş emri numaralarını kullanacağız.
+                    existing_by_uid = {}
+                    existing_by_isemri = {}
+                    for job in self.jobs:
+                        uid = str(job.get("unique_id", "")).strip()
+                        isemri = str(job.get("isemri", "")).strip()
+                        if uid:
+                            existing_by_uid[uid] = job
+                        if isemri:
+                            existing_by_isemri[isemri] = job
+
                     for c_order in cloud_orders:
                         c_isemri = str(c_order.get("malzeme_kodu", "")).strip()
+                        c_uid = str(c_order.get("unique_id", "")).strip()
                         durum_val = c_order.get("durum", "{}")
+
                         try:
-                            durum_dict = json.loads(durum_val) if isinstance(durum_val, str) else (durum_val or {})
+                            durum_dict = (
+                                json.loads(durum_val)
+                                if isinstance(durum_val, str)
+                                else (durum_val or {})
+                            )
+                            if not isinstance(durum_dict, dict):
+                                durum_dict = {}
                         except Exception:
                             durum_dict = {}
 
-                        if durum_dict.get("isStarted") == True and not durum_dict.get("isCompleted", False):
-                            if c_isemri and c_isemri not in existing_isemris:
-                                unplanned_hours = 4.0 
-                                
-                                tezgah_adi = str(durum_dict.get("torna_tezgah", "") or durum_dict.get("dik_tezgah", "")).upper()
-                                bolum = "dik" if "DİK" in tezgah_adi or "DIK" in tezgah_adi else "torna"
-                                
-                                if "dik" in str(durum_dict).lower() and "torna" not in str(durum_dict).lower():
-                                    bolum = "dik"
+                        # Önce UID ile, bulunamazsa iş emri numarası ile eşleştir.
+                        job = existing_by_uid.get(c_uid) if c_uid else None
+                        if job is None and c_isemri:
+                            job = existing_by_isemri.get(c_isemri)
 
-                                new_unplanned_job = {
-                                    "id": len(self.jobs) + 1,
-                                    "unique_id": c_order.get("unique_id", str(uuid.uuid4())),
-                                    "qty": c_order.get("hedef_adet", 1),
-                                    "isemri": c_isemri,
-                                    "material": "PLANSIZ-SAHA",
-                                    "t_setup": 0, "t_op1": 0, "t_op2": 0, "t_op3": 0,
-                                    "d_setup": 0, "d_op1": 0, "d_op2": 0, "d_op3": 0,
-                                    "torna_total_hours": unplanned_hours if bolum == "torna" else 0.0,
-                                    "dik_total_hours": unplanned_hours if bolum == "dik" else 0.0,
-                                    "total_hours": unplanned_hours,
-                                    "torna_rank": 1,
-                                    "dik_rank": 1,
-                                    "torna_finished": True if bolum != "torna" else False,
-                                    "dik_finished": True if bolum != "dik" else False,
-                                    "cloud_durum": durum_dict
-                                }
-                                self.jobs.insert(0, new_unplanned_job)
-                                updated = True
+                        # Masaüstünde hiç olmayan saha/mobil kaydı.
+                        if job is None and c_isemri:
+                            unplanned_hours = 4.0
 
-                    for job in self.jobs:
-                        job_isemri = str(job.get("isemri", "")).strip()
-                        if not job_isemri:
+                            tezgah_adi = str(
+                                durum_dict.get("torna_tezgah", "")
+                                or durum_dict.get("dik_tezgah", "")
+                            ).upper()
+                            bolum = "dik" if ("DİK" in tezgah_adi or "DIK" in tezgah_adi) else "torna"
+
+                            if "dik" in str(durum_dict).lower() and "torna" not in str(durum_dict).lower():
+                                bolum = "dik"
+
+                            # Mobilde iş tamamen bittiyse veya ilgili bölüm tamamlandıysa
+                            # masaüstündeki bitmiş iş durumu da buna göre oluşturulur.
+                            genel_bitti = durum_dict.get("isCompleted") is True
+                            torna_bitti = genel_bitti or (durum_dict.get("tornaCompleted") is True)
+                            dik_bitti = genel_bitti or (durum_dict.get("dikCompleted") is True)
+
+                            # Saha kaydı hangi bölümde çalışmışsa diğer bölüm zaten tamam kabul edilir.
+                            if bolum == "torna":
+                                dik_bitti = True
+                            else:
+                                torna_bitti = True
+
+                            new_unplanned_job = {
+                                "id": len(self.jobs) + 1,
+                                "unique_id": c_uid or str(uuid.uuid4()),
+                                "qty": c_order.get("hedef_adet", 1),
+                                "isemri": c_isemri,
+                                "material": "PLANSIZ-SAHA",
+                                "t_setup": 0, "t_op1": 0, "t_op2": 0, "t_op3": 0,
+                                "d_setup": 0, "d_op1": 0, "d_op2": 0, "d_op3": 0,
+                                "torna_total_hours": 0.0 if torna_bitti else (unplanned_hours if bolum == "torna" else 0.0),
+                                "dik_total_hours": 0.0 if dik_bitti else (unplanned_hours if bolum == "dik" else 0.0),
+                                "total_hours": 0.0 if genel_bitti else unplanned_hours,
+                                "torna_rank": 1,
+                                "dik_rank": 1,
+                                "torna_finished": torna_bitti,
+                                "dik_finished": dik_bitti,
+                                "cloud_durum": durum_dict
+                            }
+
+                            self.jobs.insert(0, new_unplanned_job)
+                            existing_by_uid[str(new_unplanned_job.get("unique_id"))] = new_unplanned_job
+                            existing_by_isemri[c_isemri] = new_unplanned_job
+                            updated = True
+                            job = new_unplanned_job
+
+                        if job is None:
                             continue
 
-                        matched_c_order = None
-                        for c_order in cloud_orders:
-                            c_isemri = str(c_order.get("malzeme_kodu", "")).strip()
-                            if c_isemri and job_isemri == c_isemri:
-                                matched_c_order = c_order
-                                break
+                        # Cloud durumunu her zaman güncel tut.
+                        old_durum = job.get("cloud_durum", {})
+                        if old_durum != durum_dict:
+                            job["cloud_durum"] = durum_dict
+                            updated = True
 
-                        if matched_c_order:
-                            try:
-                                durum_val = matched_c_order.get("durum", "{}")
-                                durum_dict = json.loads(durum_val) if isinstance(durum_val, str) else (durum_val or {})
-                                job["cloud_durum"] = durum_dict
+                        # Bulut UID'si varsa yerel kayda da yaz.
+                        if c_uid and str(job.get("unique_id", "")).strip() != c_uid:
+                            job["unique_id"] = c_uid
+                            updated = True
 
-                                torna_bitti_sinyal = (durum_dict.get("tornaCompleted") == True)
-                                dik_bitti_sinyal = (durum_dict.get("dikCompleted") == True)
+                        # Hedef adet mobil taraftan değiştiyse güncelle.
+                        if c_order.get("hedef_adet") is not None:
+                            cloud_qty = c_order.get("hedef_adet")
+                            if job.get("qty") != cloud_qty:
+                                job["qty"] = cloud_qty
+                                updated = True
 
-                                if job.get("torna_total_hours", 0) > 0:
-                                    if torna_bitti_sinyal and not job.get("torna_finished", False):
-                                        job["torna_finished"] = True
-                                        updated = True
-                                        
-                                        if job.get("material") == "PLANSIZ-SAHA":
-                                            job["torna_total_hours"] = 0.0
-                                            job["total_hours"] = 0.0
+                        # Mobildeki tamamlanma sinyallerini masaüstüne aktar.
+                        genel_bitti = durum_dict.get("isCompleted") is True
+                        torna_bitti_sinyal = genel_bitti or (durum_dict.get("tornaCompleted") is True)
+                        dik_bitti_sinyal = genel_bitti or (durum_dict.get("dikCompleted") is True)
 
-                                if job.get("dik_total_hours", 0) > 0:
-                                    if dik_bitti_sinyal and not job.get("dik_finished", False):
-                                        job["dik_finished"] = True
-                                        updated = True
-                                        
-                                        if job.get("material") == "PLANSIZ-SAHA":
-                                            job["dik_total_hours"] = 0.0
-                                            job["total_hours"] = 0.0
+                        if torna_bitti_sinyal and not job.get("torna_finished", False):
+                            job["torna_finished"] = True
+                            updated = True
+                            if job.get("material") == "PLANSIZ-SAHA":
+                                job["torna_total_hours"] = 0.0
 
-                            except Exception as e:
-                                print("Senkronizasyon ayrıştırma hatası:", e)
+                        if dik_bitti_sinyal and not job.get("dik_finished", False):
+                            job["dik_finished"] = True
+                            updated = True
+                            if job.get("material") == "PLANSIZ-SAHA":
+                                job["dik_total_hours"] = 0.0
+
+                        # Genel isCompleted=True ise iki bölüm de bitmiş kabul edilir.
+                        if genel_bitti:
+                            if not job.get("torna_finished", False):
+                                job["torna_finished"] = True
+                                updated = True
+                            if not job.get("dik_finished", False):
+                                job["dik_finished"] = True
+                                updated = True
+                            if job.get("material") == "PLANSIZ-SAHA":
+                                if job.get("torna_total_hours", 0) != 0:
+                                    job["torna_total_hours"] = 0.0
+                                    updated = True
+                                if job.get("dik_total_hours", 0) != 0:
+                                    job["dik_total_hours"] = 0.0
+                                    updated = True
+                                if job.get("total_hours", 0) != 0:
+                                    job["total_hours"] = 0.0
+                                    updated = True
 
                     if updated:
                         self.refresh_all_views()
                         self.save_data_to_file()
         except Exception as e:
             print("Cloud senkronizasyon hatası:", e)
-        
+
         self.root.after(500, self.cloud_veri_senkronizasyon_dongusu)
 
     def fmt_num(self, val):
@@ -278,7 +343,7 @@ class CNCPlanningApp:
                     data = json.load(f)
                     self.jobs = data.get("jobs", [])
                     
-                    self.yerel_versiyon = data.get("yerel_versiyon", "1.1")
+                    self.yerel_versiyon = data.get("yerel_versiyon", "1.0")
                     self.ignored_version = data.get("ignored_version", "")
                     
                     for j in self.jobs:
@@ -409,7 +474,7 @@ class CNCPlanningApp:
         except Exception:
             pass
 
-        lbl_brand = ttk.Label(logo_container, text="EAGEAN DYNAMICS v1.1", font=("Segoe UI", 11, "bold"), foreground="#2980b9")
+        lbl_brand = ttk.Label(logo_container, text="EAGEAN DYNAMICS", font=("Segoe UI", 11, "bold"), foreground="#2980b9")
         lbl_brand.pack(side=tk.LEFT)
 
         self.btn_geri_getir = ttk.Button(self.top_control_frame, text="➕ Gizlenen 'KULLANICILAR & TEZGAHLAR' Sekmesini Geri Getir", command=self.kullanici_sekmesini_goster)
@@ -458,12 +523,9 @@ class CNCPlanningApp:
         self.tab_ayarlar = ttk.Frame(self.content_frame)
         self.tab_kullanicilar = ttk.Frame(self.content_frame) 
 
-        self.tab_detay_tam_sayfa = ttk.Frame(self.content_frame)
-
         self.all_tabs = [
             self.tab_veri, self.tab_kontrol, self.tab_ic_torna, self.tab_ic_dik,
-            self.tab_yuk, self.tab_mesai, self.tab_bitmis_isler, self.tab_ayarlar, self.tab_kullanicilar,
-            self.tab_detay_tam_sayfa
+            self.tab_yuk, self.tab_mesai, self.tab_bitmis_isler, self.tab_ayarlar, self.tab_kullanicilar
         ]
 
         self.context_menu_tab = tk.Menu(self.root, tearoff=0, font=("Segoe UI", 10, "bold"))
@@ -479,7 +541,6 @@ class CNCPlanningApp:
         self.build_tab_bitmis_isler()
         self.build_tab_ayarlar()
         self.build_tab_kullanicilar()
-        self.build_tab_detay_tam_sayfa()
 
         self.change_custom_tab(0)
 
@@ -489,12 +550,11 @@ class CNCPlanningApp:
         
         self.all_tabs[index].grid(row=0, column=0, sticky="nsew")
 
-        if index < len(self.nav_buttons):
-            for idx, btn in enumerate(self.nav_buttons):
-                if idx == index:
-                    btn.config(bg="#ffffff", fg="#000000")
-                else:
-                    btn.config(bg="#e0e0e0", fg="#555555")
+        for idx, btn in enumerate(self.nav_buttons):
+            if idx == index:
+                btn.config(bg="#ffffff", fg="#000000")
+            else:
+                btn.config(bg="#e0e0e0", fg="#555555")
 
         if index == 1: self.refresh_kontrol_tab()
         elif index == 2: self.refresh_ic_torna_tab()
@@ -520,49 +580,6 @@ class CNCPlanningApp:
             self.btn_geri_getir.pack_forget() 
         except Exception:
             pass
-
-    def build_tab_detay_tam_sayfa(self):
-        self.tab_detay_tam_sayfa.columnconfigure(0, weight=1)
-        self.tab_detay_tam_sayfa.rowconfigure(1, weight=1)
-
-        top_action_bar = ttk.Frame(self.tab_detay_tam_sayfa)
-        top_action_bar.grid(row=0, column=0, sticky="ew", padx=10, pady=10)
-
-        self.btn_geri_don = ttk.Button(top_action_bar, text="⬅️ Geri Dön", command=self.tam_sayfa_geri_don)
-        self.btn_geri_don.pack(side=tk.LEFT, padx=5)
-
-        self.lbl_tam_sayfa_baslik = ttk.Label(top_action_bar, text="İş Emri Detayları", font=("Segoe UI", 12, "bold"), foreground="#2980b9")
-        self.lbl_tam_sayfa_baslik.pack(side=tk.LEFT, padx=15)
-
-        content_box_frame = ttk.Frame(self.tab_detay_tam_sayfa)
-        content_box_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=5)
-        content_box_frame.rowconfigure(0, weight=1)
-        content_box_frame.columnconfigure(0, weight=1)
-
-        self.txt_tam_sayfa_detay = tk.Text(content_box_frame, font=("Segoe UI", 11), wrap=tk.WORD, bg="#fcfcfc", fg="#333333", padx=15, pady=15)
-        self.txt_tam_sayfa_detay.grid(row=0, column=0, sticky="nsew")
-
-        scrollbar_detay = ttk.Scrollbar(content_box_frame, orient=tk.VERTICAL, command=self.txt_tam_sayfa_detay.yview)
-        self.txt_tam_sayfa_detay.configure(yscrollcommand=scrollbar_detay.set)
-        scrollbar_detay.grid(row=0, column=1, sticky="ns")
-        
-        self.onceki_aktif_sekme_index = 0
-
-    def tam_sayfa_detay_ac(self, detay_metni, baslik, donus_sekme_index=0):
-        self.onceki_aktif_sekme_index = donus_sekme_index
-        self.lbl_tam_sayfa_baslik.config(text=f"Detay: {baslik}")
-        
-        self.txt_tam_sayfa_detay.config(state=tk.NORMAL)
-        self.txt_tam_sayfa_detay.delete("1.0", tk.END)
-        self.txt_tam_sayfa_detay.insert(tk.END, detay_metni)
-        self.txt_tam_sayfa_detay.config(state=tk.DISABLED)
-
-        for tab in self.all_tabs:
-            tab.grid_forget()
-        self.tab_detay_tam_sayfa.grid(row=0, column=0, sticky="nsew")
-
-    def tam_sayfa_geri_don(self):
-        self.change_custom_tab(self.onceki_aktif_sekme_index)
 
     def build_tab_kullanicilar(self):
         self.tab_kullanicilar.columnconfigure(0, weight=1)
@@ -856,7 +873,7 @@ class CNCPlanningApp:
         self.btn_add = ttk.Button(frame_form, text="➕ İş Emrini Listeye Kaydet ve Buluta Gönder", command=self.save_or_update_job)
         self.btn_add.grid(row=3, column=0, columnspan=6, pady=10)
 
-        frame_list = ttk.LabelFrame(self.tab_veri, text=" Aktif İş Emirleri Listesi (Detay için üzerine çift tıklayın) ", style="Grey.TLabelframe")
+        frame_list = ttk.LabelFrame(self.tab_veri, text=" Aktif İş Emirleri Listesi ", style="Grey.TLabelframe")
         frame_list.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         frame_list.columnconfigure(0, weight=1)
         frame_list.rowconfigure(0, weight=1)
@@ -879,43 +896,10 @@ class CNCPlanningApp:
         self.context_menu.add_command(label="🗑️ Sil", command=self.delete_selected_job)
 
         self.tree_jobs.bind("<Button-3>", self.show_context_menu)
-        self.tree_jobs.bind("<Double-1>", self.aktif_is_detay_tam_sayfa_ac)
 
         self.tooltip_veri = ToolTip(self.tree_jobs)
         self.tree_jobs.bind("<Motion>", lambda e: self.on_hover_tooltip(e, self.tree_jobs, self.tooltip_veri))
         self.tree_jobs.bind("<Leave>", lambda e: self.tooltip_veri.hidetip())
-
-    def aktif_is_detay_tam_sayfa_ac(self, event):
-        selected = self.tree_jobs.selection()
-        if not selected: return
-        item_values = self.tree_jobs.item(selected[0], "values")
-        isemri_no = item_values[0]
-        material_code = item_values[1]
-
-        target_job = None
-        for j in self.jobs:
-            if str(j.get("isemri")) == str(isemri_no) and str(j.get("material")) == str(material_code):
-                target_job = j
-                break
-
-        if target_job:
-            d = target_job.get("cloud_durum", {})
-            detay = f"📋 İŞ EMRİ BİLGİ VE DETAYLARI\n"
-            detay += f"----------------------------------------\n"
-            detay += f"• İş Emri No   : {target_job.get('isemri')}\n"
-            detay += f"• Malzeme Kodu : {target_job.get('material')}\n"
-            detay += f"• Üretim Adedi : {target_job.get('qty')}\n"
-            detay += f"• Toplam Süre  : {target_job.get('total_hours')} Saat\n\n"
-            detay += f"⚙️ SÜRE VE OPERASYON DETAYLARI:\n"
-            detay += f"  - Torna Setup : {target_job.get('t_setup')} dk\n"
-            detay += f"  - Torna Op Top: {target_job.get('torna_op_sum')} dk\n"
-            detay += f"  - Dik Setup   : {target_job.get('d_setup')} dk\n"
-            detay += f"  - Dik Op Top  : {target_job.get('dik_op_sum')} dk\n\n"
-            
-            operator_adi = d.get("torna_operator") or d.get("dik_operator") or "Saha Operatörü"
-            detay += f"👤 Son İşlem Yapan Operatör: {operator_adi}\n"
-
-            self.tam_sayfa_detay_ac(detay, isemri_no, donus_sekme_index=0)
 
     def check_and_autofill_from_library(self, event=None):
         if self.editing_job_id is not None:
@@ -1175,7 +1159,7 @@ class CNCPlanningApp:
         lbl = ttk.Label(top_bar, text="📊 Kayıtlı İş Emirleri Listesi", font=("Segoe UI", 12, "bold"), style="Grey.TLabel")
         lbl.pack(side=tk.LEFT, padx=10, pady=10)
 
-        frame_list = ttk.LabelFrame(self.tab_kontrol, text=" İş Emirleri Durum Tablosu (Detay için çift tıklayın) ", style="Grey.TLabelframe")
+        frame_list = ttk.LabelFrame(self.tab_kontrol, text=" İş Emirleri Durum Tablosu ", style="Grey.TLabelframe")
         frame_list.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         frame_list.columnconfigure(0, weight=1)
         frame_list.rowconfigure(0, weight=1)
@@ -1189,37 +1173,10 @@ class CNCPlanningApp:
             self.tree_kontrol.column(col, anchor="center", width=width)
 
         self.tree_kontrol.grid(row=0, column=0, sticky="nsew")
-        self.tree_kontrol.bind("<Double-1>", self.kontrol_is_detay_tam_sayfa_ac)
 
         scrollbar = ttk.Scrollbar(frame_list, orient=tk.VERTICAL, command=self.tree_kontrol.yview)
         self.tree_kontrol.configure(yscroll=scrollbar.set)
         scrollbar.grid(row=0, column=1, sticky="ns")
-
-    def kontrol_is_detay_tam_sayfa_ac(self, event):
-        selected = self.tree_kontrol.selection()
-        if not selected: return
-        item_values = self.tree_kontrol.item(selected[0], "values")
-        isemri_no = item_values[0]
-
-        target_job = None
-        for j in self.jobs:
-            if str(j.get("isemri")) == str(isemri_no):
-                target_job = j
-                break
-
-        if target_job:
-            d = target_job.get("cloud_durum", {})
-            detay = f"📊 PLAN KONTROL - İŞ EMRİ AYRINTILARI\n"
-            detay += f"----------------------------------------\n"
-            detay += f"• İş Emri No   : {target_job.get('isemri')}\n"
-            detay += f"• Malzeme Kodu : {target_job.get('material')}\n"
-            detay += f"• Üretim Adedi : {target_job.get('qty')}\n"
-            detay += f"• Toplam Süre  : {target_job.get('total_hours')} Saat\n\n"
-            detay += f"🌐 Saha Durum Bilgisi:\n"
-            detay += f"  - Başladı mı? : {'Evet' if d.get('isStarted') else 'Hayır'}\n"
-            detay += f"  - Bitti mi?   : {'Evet' if d.get('isCompleted') else 'Hayır'}\n"
-
-            self.tam_sayfa_detay_ac(detay, isemri_no, donus_sekme_index=1)
 
     def refresh_kontrol_tab(self):
         self.tree_kontrol.delete(*self.tree_kontrol.get_children())
@@ -1721,16 +1678,16 @@ class CNCPlanningApp:
         self.tab_bitmis_isler.columnconfigure(0, weight=1)
         self.tab_bitmis_isler.rowconfigure(0, weight=1)
 
-        frame_list = ttk.LabelFrame(self.tab_bitmis_isler, text=" 🏁 Biten ve Plan Kontrolden Silinen İşler (Torna ve Dik Ayrı, Tarihe Göre Sıralı) ", style="Grey.TLabelframe")
+        frame_list = ttk.LabelFrame(self.tab_bitmis_isler, text=" 🏁 Biten ve Plan Kontrolden Silinen İşler (Detay için çift tıklayın, silmek için sağ tıklayın) ", style="Grey.TLabelframe")
         frame_list.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
         frame_list.columnconfigure(0, weight=1)
         frame_list.rowconfigure(0, weight=1)
 
-        cols_bitmis = ("İş Emri No", "Malzeme Kodu", "Adet", "Bölüm", "Bitiş Tarihi")
+        cols_bitmis = ("İş Emri No", "Malzeme Kodu", "Adet", "Tamamlanma Durumu")
         self.tree_bitmis = ttk.Treeview(frame_list, columns=cols_bitmis, show="headings")
         for col in cols_bitmis:
             self.tree_bitmis.heading(col, text=col)
-            self.tree_bitmis.column(col, anchor="center", width=180)
+            self.tree_bitmis.column(col, anchor="center", width=220)
         self.tree_bitmis.grid(row=0, column=0, sticky="nsew")
 
         scrollbar = ttk.Scrollbar(frame_list, orient=tk.VERTICAL, command=self.tree_bitmis.yview)
@@ -1740,7 +1697,7 @@ class CNCPlanningApp:
         self.context_menu_bitmis = tk.Menu(self.root, tearoff=0)
         self.context_menu_bitmis.add_command(label="🗑️ Bu Bitmiş İşi Tamamen Sil", command=self.delete_selected_bitmis_job)
 
-        self.tree_bitmis.bind("<Double-1>", self.bitmis_is_detay_tam_sayfa_ac)
+        self.tree_bitmis.bind("<Double-1>", self.bitmis_is_detay_goster)
         self.tree_bitmis.bind("<Button-3>", self.show_bitmis_context_menu)
 
     def show_bitmis_context_menu(self, event):
@@ -1780,104 +1737,95 @@ class CNCPlanningApp:
         if not hasattr(self, "tree_bitmis"): return
         self.tree_bitmis.delete(*self.tree_bitmis.get_children())
         
-        bitmis_liste = []
-
         for job in self.jobs:
-            d = job.get("cloud_durum", {})
-            torna_bitti = (job.get("torna_total_hours", 0) == 0) or job.get("torna_finished", False) or d.get("tornaCompleted", False)
-            dik_bitti = (job.get("dik_total_hours", 0) == 0) or job.get("dik_finished", False) or d.get("dikCompleted", False)
+            torna_bitti = (job.get("torna_total_hours", 0) == 0) or job.get("torna_finished", False)
+            dik_bitti = (job.get("dik_total_hours", 0) == 0) or job.get("dik_finished", False)
 
-            # Torna bölümü bittiyse ekle
-            has_torna = (job.get("torna_total_hours", 0) > 0) or d.get("tornaStarted", False) or (d.get("torna_operasyonlar") and len(d.get("torna_operasyonlar")) > 0)
-            if has_torna and torna_bitti:
-                torna_ops = d.get("torna_operasyonlar", [])
-                son_bitis = ""
-                if torna_ops:
-                    bitisler = [op.get("bitis") for op in torna_ops if op.get("bitis")]
-                    if bitisler:
-                        son_bitis = max(bitisler)
-                
-                bitmis_liste.append({
-                    "job": job,
-                    "bolum": "TORNA",
-                    "bitis_tarih": son_bitis or "1970-01-01T00:00",
-                    "formatli_tarih": self.format_tarih_tr(son_bitis)
-                })
+            if torna_bitti and dik_bitti:
+                self.tree_bitmis.insert("", tk.END, values=(
+                    job.get("isemri", "-"),
+                    job.get("material", "-"),
+                    job.get("qty", 0),
+                    "Tüm Operasyonlar Tamamlandı"
+                ))
 
-            # Dik İşlem bölümü bittiyse ekle
-            has_dik = (job.get("dik_total_hours", 0) > 0) or d.get("dikStarted", False) or (d.get("dik_operasyonlar") and len(d.get("dik_operasyonlar")) > 0)
-            if has_dik and dik_bitti:
-                dik_ops = d.get("dik_operasyonlar", [])
-                son_bitis = ""
-                if dik_ops:
-                    bitisler = [op.get("bitis") for op in dik_ops if op.get("bitis")]
-                    if bitisler:
-                        son_bitis = max(bitisler)
-
-                bitmis_liste.append({
-                    "job": job,
-                    "bolum": "DİK İŞLEM",
-                    "bitis_tarih": son_bitis or "1970-01-01T00:00",
-                    "formatli_tarih": self.format_tarih_tr(son_bitis)
-                })
-
-        # Bitiş tarihine göre en yeniden eskiye (descending) sıralama
-        bitmis_liste.sort(key=lambda x: x["bitis_tarih"], reverse=True)
-
-        for item in bitmis_liste:
-            j = item["job"]
-            self.tree_bitmis.insert("", tk.END, values=(
-                j.get("isemri", "-"),
-                j.get("material", "-"),
-                j.get("qty", 0),
-                item["bolum"],
-                item["formatli_tarih"]
-            ))
-
-    def bitmis_is_detay_tam_sayfa_ac(self, event):
+    def bitmis_is_detay_goster(self, event):
         selected = self.tree_bitmis.selection()
         if not selected: return
         item_values = self.tree_bitmis.item(selected[0], "values")
         isemri_no = item_values[0]
-        material_code = item_values[1]
-        bolum = item_values[3]
 
         target_job = None
         for j in self.jobs:
-            if str(j.get("isemri")) == str(isemri_no) and str(j.get("material")) == str(material_code):
+            if str(j.get("isemri")) == str(isemri_no):
                 target_job = j
                 break
 
         if target_job:
             d = target_job.get("cloud_durum", {})
-            operator_adi = d.get("torna_operator") if bolum == "TORNA" else d.get("dik_operator")
+            
+            operator_adi = d.get("torna_operator") or d.get("dik_operator") or d.get("username") or d.get("operator")
             if not operator_adi or operator_adi == "-":
-                operator_adi = "Saha Operatörü"
+                operator_adi = target_job.get("operator", "Saha Operatörü")
 
-            detay = f"🏁 BİTMİŞ İŞ EMRİ DETAYI [{bolum}]\n"
-            detay += f"----------------------------------------\n"
-            detay += f"• İş Emri No   : {target_job.get('isemri')}\n"
-            detay += f"• Malzeme Kodu : {target_job.get('material')}\n"
-            detay += f"• Hedef Adet   : {target_job.get('qty')}\n"
-            detay += f"• Bölüm        : {bolum}\n"
-            detay += f"• İşlemi Yapan : {operator_adi}\n\n"
+            # Detay penceresi ana uygulama ile aynı boyutta açılır
+            detay_win = tk.Toplevel(self.root)
+            detay_win.title(f"İş Emri Detayı: {isemri_no}")
+            detay_win.configure(bg="#1e1e1e")
+            try:
+                detay_win.geometry(f"{self.root.winfo_width()}x{self.root.winfo_height()}+{self.root.winfo_x()}+{self.root.winfo_y()}")
+            except Exception:
+                detay_win.geometry("1200x750")
+            detay_win.minsize(900, 600)
 
-            if bolum == "TORNA":
-                torna_ops = d.get("torna_operasyonlar", [])
-                if torna_ops:
-                    detay += "🌀 TORNA OPERASYONLARI:\n"
-                    for op in torna_ops:
-                        detay += f"  - {op.get('opNo')}. Op | Başlangıç: {self.format_tarih_tr(op.get('baslangic'))}\n"
-                        detay += f"    Bitiş: {self.format_tarih_tr(op.get('bitis'))}\n"
-            else:
-                dik_ops = d.get("dik_operasyonlar", [])
-                if dik_ops:
-                    detay += "📐 DİK İŞLEM OPERASYONLARI:\n"
-                    for op in dik_ops:
-                        detay += f"  - {op.get('opNo')}. Op | Başlangıç: {self.format_tarih_tr(op.get('baslangic'))}\n"
-                        detay += f"    Bitiş: {self.format_tarih_tr(op.get('bitis'))}\n"
+            ust = tk.Frame(detay_win, bg="#1e1e1e")
+            ust.pack(fill="x", padx=20, pady=(18, 8))
+            tk.Button(ust, text="← GERİ", command=detay_win.destroy, bg="#444444", fg="white",
+                      activebackground="#666666", activeforeground="white", font=("Segoe UI", 12, "bold"),
+                      padx=18, pady=8, relief="flat", cursor="hand2").pack(side="left")
+            tk.Label(ust, text="🏁 BİTMİŞ İŞ EMRİ DETAYI", bg="#1e1e1e", fg="white",
+                     font=("Segoe UI", 22, "bold")).pack(side="left", padx=20)
 
-            self.tam_sayfa_detay_ac(detay, f"{isemri_no} ({bolum})", donus_sekme_index=6)
+            bilgi = tk.Frame(detay_win, bg="#2b2b2b")
+            bilgi.pack(fill="x", padx=20, pady=8)
+            bilgiler = [
+                ("İŞ EMRİ NO", target_job.get("isemri")),
+                ("MALZEME KODU", target_job.get("material")),
+                ("HEDEF ADET", target_job.get("qty")),
+                ("İŞLEMİ YAPAN", operator_adi),
+            ]
+            for i, (baslik, deger) in enumerate(bilgiler):
+                tk.Label(bilgi, text=f"{baslik}: {deger}", bg="#2b2b2b", fg="white",
+                         font=("Segoe UI", 13, "bold"), anchor="w").grid(row=0, column=i, padx=18, pady=14, sticky="w")
+
+            alan = tk.Frame(detay_win, bg="#1e1e1e")
+            alan.pack(fill="both", expand=True, padx=20, pady=(8, 20))
+            text = tk.Text(alan, bg="#252525", fg="#eeeeee", insertbackground="white",
+                           font=("Segoe UI", 13), wrap="word", padx=20, pady=18, relief="flat")
+            scroll = ttk.Scrollbar(alan, orient="vertical", command=text.yview)
+            text.configure(yscrollcommand=scroll.set)
+            scroll.pack(side="right", fill="y")
+            text.pack(side="left", fill="both", expand=True)
+
+            text.tag_configure("op", foreground="#ff2222", font=("Segoe UI", 19, "bold"), spacing1=8, spacing3=5)
+            text.tag_configure("section", foreground="#ffffff", font=("Segoe UI", 16, "bold"), spacing1=10, spacing3=6)
+            text.tag_configure("normal", foreground="#eeeeee", font=("Segoe UI", 13))
+
+            def operasyonlari_yaz(baslik, ikon, operasyonlar):
+                if not operasyonlar:
+                    return
+                text.insert("end", f"{ikon} {baslik}\n", "section")
+                for op in operasyonlar:
+                    op_no = op.get("opNo", "?")
+                    text.insert("end", f"\n{op_no}. OPR\n", "op")
+                    text.insert("end", f"Başlangıç : {self.format_tarih_tr(op.get('baslangic'))}\n", "normal")
+                    text.insert("end", f"Bitiş     : {self.format_tarih_tr(op.get('bitis'))}\n", "normal")
+                    if op.get("durum"):
+                        text.insert("end", f"Durum     : {op.get('durum')}\n", "normal")
+
+            operasyonlari_yaz("TORNA OPERASYONLARI", "🌀", d.get("torna_operasyonlar", []))
+            operasyonlari_yaz("DİK İŞLEM OPERASYONLARI", "📐", d.get("dik_operasyonlar", []))
+            text.configure(state="disabled")
 
     def build_tab_ayarlar(self):
         self.tab_ayarlar.columnconfigure(0, weight=1)
