@@ -601,75 +601,40 @@
         }
 
         try {
-            const { data: existingRecords } = await supabaseClient
-                .from("cnc_is_emirleri")
-                .select("*")
-                .eq("malzeme_kodu", malzeme);
+            // DÜZELTME: Eskinin üzerine yazma (update) mantığı kaldırıldı, 
+            // her başlatmada benzersiz unique_id ile YENİ kayıt (insert) oluşturuluyor.
+            let d = {
+                isStarted: true,
+                isCompleted: false,
+                isPaused: false,
+                tornaStarted: (bolumTipi === "torna"),
+                dikStarted: (bolumTipi === "dik"),
+                tornaCompleted: (bolumTipi !== "torna"),
+                dikCompleted: (bolumTipi !== "dik")
+            };
 
-            if (existingRecords && existingRecords.length > 0) {
-                let record = existingRecords[0];
-                let d = {};
-                try { d = JSON.parse(record.durum || "{}"); } catch(e){}
-
-                if (bolumTipi === "torna") {
-                    d.torna_tezgah = tezgah;
-                    d.torna_operator = currentUser;
-                    d.torna_aktifOpIndex = 0;
-                    d.torna_operasyonlar = operasyonlar;
-                    d.tornaStarted = true;
-                    d.tornaCompleted = false;
-                    d.torna_baslangic_tarih = tarihSaat;
-                } else {
-                    d.dik_tezgah = tezgah;
-                    d.dik_operator = currentUser;
-                    d.dik_aktifOpIndex = 0;
-                    d.dik_operasyonlar = operasyonlar;
-                    d.dikStarted = true;
-                    d.dikCompleted = false;
-                    d.dik_baslangic_tarih = tarihSaat;
-                }
-                d.isStarted = true;
-
-                await supabaseClient
-                    .from("cnc_is_emirleri")
-                    .update({
-                        hedef_adet: parseInt(adet),
-                        durum: JSON.stringify(d)
-                    })
-                    .eq("id", record.id);
+            if (bolumTipi === "torna") {
+                d.torna_tezgah = tezgah;
+                d.torna_operator = currentUser;
+                d.torna_aktifOpIndex = 0;
+                d.torna_operasyonlar = operasyonlar;
+                d.torna_baslangic_tarih = tarihSaat;
             } else {
-                let d = {
-                    isStarted: true,
-                    isCompleted: false,
-                    isPaused: false,
-                    tornaStarted: (bolumTipi === "torna"),
-                    dikStarted: (bolumTipi === "dik"),
-                    tornaCompleted: (bolumTipi !== "torna"),
-                    dikCompleted: (bolumTipi !== "dik")
-                };
-
-                if (bolumTipi === "torna") {
-                    d.torna_tezgah = tezgah;
-                    d.torna_operator = currentUser;
-                    d.torna_aktifOpIndex = 0;
-                    d.torna_operasyonlar = operasyonlar;
-                    d.torna_baslangic_tarih = tarihSaat;
-                } else {
-                    d.dik_tezgah = tezgah;
-                    d.dik_operator = currentUser;
-                    d.dik_aktifOpIndex = 0;
-                    d.dik_operasyonlar = operasyonlar;
-                    d.dik_baslangic_tarih = tarihSaat;
-                }
-
-                const yeniKayit = {
-                    unique_id: "saha_" + Date.now(),
-                    malzeme_kodu: malzeme,
-                    hedef_adet: parseInt(adet),
-                    durum: JSON.stringify(d)
-                };
-                await supabaseClient.from("cnc_is_emirleri").insert([yeniKayit]);
+                d.dik_tezgah = tezgah;
+                d.dik_operator = currentUser;
+                d.dik_aktifOpIndex = 0;
+                d.dik_operasyonlar = operasyonlar;
+                d.dik_baslangic_tarih = tarihSaat;
             }
+
+            const yeniKayit = {
+                unique_id: "saha_" + Date.now(),
+                malzeme_kodu: malzeme,
+                hedef_adet: parseInt(adet),
+                durum: JSON.stringify(d)
+            };
+            
+            await supabaseClient.from("cnc_is_emirleri").insert([yeniKayit]);
             
             document.getElementById("opMalzemeKodu").value = "";
             document.getElementById("opAdet").value = "";
